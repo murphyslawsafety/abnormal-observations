@@ -3,11 +3,11 @@ window.AO_CONFIG = {
   startingObserverCount: 1,
 
   // Replace these with your real links.
-  youtubeChannelUrl: "https://www.youtube.com/",
+  youtubeChannelUrl: "https://www.youtube.com/@AbnormalObservations",
   dontThinkPlaylistUrl: "https://www.youtube.com/",
   amazonDontThinkUrl: "#",
   amazonObserverAgeUrl: "#",
-  amazonBalanceIdentityUrl: "#",
+  amazonBalanceIdentityUrl: "https://www.amazon.com/Substrate-Balance-Identity-Unified-Framework/dp/B0GNS95MDZ/",
   amazonProjectZeroUrl: "#",
 
   // Optional contact / email signup link.
