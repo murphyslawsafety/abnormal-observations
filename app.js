@@ -65,8 +65,10 @@
     const url = cfg[key];
     if (url && url !== "#") {
       link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener";
+      if (/^https?:\/\//i.test(url)) {
+        link.target = "_blank";
+        link.rel = "noopener";
+      }
     } else {
       link.addEventListener("click", function (event) {
         event.preventDefault();
