@@ -5,10 +5,10 @@ window.AO_CONFIG = {
   // Replace these with your real links.
   youtubeChannelUrl: "https://www.youtube.com/@AbnormalObservations",
   dontThinkPlaylistUrl: "https://www.youtube.com/",
-  amazonDontThinkUrl: "#",
-  amazonObserverAgeUrl: "#",
-  amazonBalanceIdentityUrl: "https://www.amazon.com/Substrate-Balance-Identity-Unified-Framework/dp/B0GNS95MDZ/",
-  amazonProjectZeroUrl: "#",
+  amazonDontThinkUrl: "https://www.amazon.com/dp/B0H9XC29RL",
+  amazonObserverAgeUrl: "https://www.amazon.com/dp/B0HB762F9D",
+  amazonBalanceIdentityUrl: "https://www.amazon.com/dp/B0GMWFP8N5",
+  amazonProjectZeroUrl: "https://www.amazon.com/dp/B0HB8V5BCB",
 
   // Optional contact / email signup link.
   emailSignupUrl: "#"
