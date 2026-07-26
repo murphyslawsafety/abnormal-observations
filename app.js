@@ -8,36 +8,95 @@
   const base = Number(cfg.startingObserverCount || 1);
   const stored = localStorage.getItem("aoObserverNumber");
   const localJoins = Number(localStorage.getItem("aoLocalJoinCount") || 0);
+  const counterApiUrl = cfg.counterApiUrl || "";
+  let globalCount = null;
 
   function renderCount(value) {
     if (!countEl) return;
     countEl.textContent = Number(value).toLocaleString("en-US");
   }
 
-  renderCount(base + localJoins);
-
-  if (stored && result && assignedNumber) {
+  function showStoredObserver() {
+    if (!stored || !result || !assignedNumber) return;
     assignedNumber.textContent = Number(stored).toLocaleString("en-US");
     result.classList.add("show");
     if (joinButton) joinButton.textContent = "Continue";
   }
 
+  function persistObserver(number) {
+    localStorage.setItem("aoObserverNumber", String(number));
+    renderCount(number);
+    if (assignedNumber) assignedNumber.textContent = Number(number).toLocaleString("en-US");
+    if (result) result.classList.add("show");
+    if (joinButton) joinButton.textContent = "Begin Observing";
+  }
+
+  function joinLocally() {
+    const nextLocalJoin = localJoins + 1;
+    const number = base + nextLocalJoin;
+    localStorage.setItem("aoLocalJoinCount", String(nextLocalJoin));
+    persistObserver(number);
+  }
+
+  async function loadGlobalCount() {
+    if (!counterApiUrl || !countEl) return false;
+
+    try {
+      const response = await fetch(counterApiUrl, { method: "GET" });
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (typeof data.count !== "number") return false;
+      globalCount = data.count;
+      renderCount(globalCount);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function joinGlobally() {
+    const response = await fetch(counterApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error("Counter request failed");
+    }
+
+    const data = await response.json();
+    if (typeof data.observerNumber !== "number") {
+      throw new Error("Counter response invalid");
+    }
+
+    persistObserver(data.observerNumber);
+  }
+
+  renderCount(base + localJoins);
+  loadGlobalCount().finally(function () {
+    showStoredObserver();
+  });
+
   if (joinButton) {
-    joinButton.addEventListener("click", function () {
+    joinButton.addEventListener("click", async function () {
       if (stored) {
         window.location.href = "begin.html";
         return;
       }
 
-      const nextLocalJoin = localJoins + 1;
-      const number = base + nextLocalJoin;
-      localStorage.setItem("aoLocalJoinCount", String(nextLocalJoin));
-      localStorage.setItem("aoObserverNumber", String(number));
-      renderCount(number);
+      joinButton.disabled = true;
 
-      if (assignedNumber) assignedNumber.textContent = number.toLocaleString("en-US");
-      if (result) result.classList.add("show");
-      joinButton.textContent = "Begin Observing";
+      if (counterApiUrl) {
+        try {
+          await joinGlobally();
+        } catch (error) {
+          joinLocally();
+        }
+      } else {
+        joinLocally();
+      }
+
+      joinButton.disabled = false;
     });
   }
 

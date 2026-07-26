@@ -1,6 +1,13 @@
 window.AO_CONFIG = {
-  // Replace this with your actual public count whenever you want.
+  // Public count seed used when the global counter is first created.
   startingObserverCount: 1,
+
+  // Global counter endpoint. Works automatically on Cloudflare Pages.
+  // Leave blank to use the local preview counter only.
+  counterApiUrl: "/api/observers",
+
+  logoUrl: "media/ao-logo.png",
+  engageImageUrl: "media/ao-engage.png",
 
   // Replace these with your real links.
   youtubeChannelUrl: "https://www.youtube.com/@AbnormalObservations",

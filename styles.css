@@ -39,6 +39,42 @@ body::before {
 
 a { color: inherit; }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hero-logo {
+  display: block;
+  width: min(360px, 88%);
+  margin: 0 auto 8px;
+  height: auto;
+}
+
+.nav-brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.nav-logo {
+  display: block;
+  width: auto;
+  height: 38px;
+  max-width: min(220px, 52vw);
+  object-fit: contain;
+  object-position: left center;
+}
+
 .site-shell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -180,12 +216,6 @@ a { color: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-
-.nav-brand {
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  text-decoration: none;
 }
 
 .nav-links {
@@ -387,6 +417,35 @@ a { color: inherit; }
   font-size: 0.88rem;
 }
 
+.footer-inner {
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+}
+
+.footer-copy {
+  margin: 0;
+  max-width: 560px;
+}
+
+.engage-link {
+  display: block;
+  width: min(640px, 100%);
+  text-decoration: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.engage-link:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.engage-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 @media (max-width: 720px) {
   .site-shell {
     width: min(1120px, calc(100% - 24px));
@@ -437,9 +496,15 @@ a { color: inherit; }
   .nav-brand {
     flex: 1;
     min-width: 0;
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
-    line-height: 1.2;
+  }
+
+  .nav-logo {
+    height: 32px;
+    max-width: min(180px, 48vw);
+  }
+
+  .hero-logo {
+    width: min(280px, 92%);
   }
 
   .nav-toggle {

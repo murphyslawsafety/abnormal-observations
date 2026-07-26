@@ -1,0 +1,11 @@
+name = "abnormal-observations"
+compatibility_date = "2024-08-01"
+pages_build_output_dir = "."
+
+# Create a KV namespace in Cloudflare, then paste its ID below.
+[[kv_namespaces]]
+binding = "OBSERVER_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[vars]
+STARTING_OBSERVER_COUNT = "1"
