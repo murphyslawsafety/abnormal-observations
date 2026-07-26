@@ -10,7 +10,8 @@ window.AO_CONFIG = {
 
   // Replace these with your real links.
   youtubeChannelUrl: "https://www.youtube.com/@AbnormalObservations",
-  dontThinkPlaylistUrl: "https://www.youtube.com/@AbnormalObservations",
+  observationOneUrl: "https://www.youtube.com/shorts/dwP9ofH1HOE",
+  dontThinkPlaylistUrl: "https://www.youtube.com/shorts/dwP9ofH1HOE",
   dontThinkFreePdfUrl: "downloads/dont-think-free.pdf",
   amazonDontThinkUrl: "https://www.amazon.com/dp/B0H9XC29RL",
   amazonObserverAgeUrl: "https://www.amazon.com/dp/B0HB762F9D",
