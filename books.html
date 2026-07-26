@@ -7,13 +7,20 @@
   <title>The Works | Abnormal Observations</title>
   <link rel="icon" href="media/ao-logo.png" type="image/png">
   <link rel="apple-touch-icon" href="media/ao-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
   <header class="topbar">
     <div class="site-shell nav">
-      <a class="nav-brand" href="index.html">
-        <img class="nav-logo" src="media/ao-logo.png" alt="Abnormal Observations">
+      <a class="nav-brand" href="index.html" aria-label="Abnormal Observations home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="nav-wordmark">Abnormal Observations</span>
       </a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
         <span class="nav-toggle-icon" aria-hidden="true"></span>
@@ -30,6 +37,7 @@
     <div class="site-shell">
       <p class="eyebrow">The complete path</p>
       <h1>Four works.<br>One continuous observation.</h1>
+      <div class="rule rule-left" aria-hidden="true"><span></span></div>
       <p class="lead">
         Begin wherever curiosity finds you. The recommended first doorway is
         <em>DON'T THINK</em>.
@@ -37,44 +45,48 @@
 
       <section class="book-grid" aria-label="Books">
         <article class="book-card is-featured">
-          <div class="kicker">Observe the mind</div>
+          <div class="kicker">01 — Observe the mind</div>
           <h2>DON'T THINK</h2>
           <p>A field guide to investigating thought, attention, memory, identity, and awareness.</p>
           <div class="book-card-links">
-            <a data-config-link="dontThinkFreePdfUrl" href="#">Download free PDF →</a>
-            <a data-config-link="amazonDontThinkUrl" href="#">Buy print edition →</a>
+            <a data-config-link="dontThinkFreePdfUrl" href="#">Download free PDF</a>
+            <a data-config-link="amazonDontThinkUrl" href="#">Buy print edition</a>
           </div>
         </article>
 
         <article class="book-card">
-          <div class="kicker">Observe civilization</div>
+          <div class="kicker">02 — Observe civilization</div>
           <h2>The Observer Age</h2>
           <p>Intelligence, fragmentation, technological acceleration, and the civilization threshold.</p>
-          <a data-config-link="amazonObserverAgeUrl" href="#">View the book →</a>
+          <a data-config-link="amazonObserverAgeUrl" href="#">View the book</a>
         </article>
 
         <article class="book-card">
-          <div class="kicker">Observe physical balance</div>
+          <div class="kicker">03 — Observe physical balance</div>
           <h2>Balance Identity</h2>
           <p>A proposed substrate-level framework for interpreting balance across physics.</p>
-          <a data-config-link="amazonBalanceIdentityUrl" href="#">View the work →</a>
+          <a data-config-link="amazonBalanceIdentityUrl" href="#">View the work</a>
         </article>
 
         <article class="book-card">
-          <div class="kicker">Observe what comes first</div>
-          <h2>Imvestigation Zero</h2>
+          <div class="kicker">04 — Observe what comes first</div>
+          <h2>Investigation Zero</h2>
           <p>The work that exists before the others: an investigation of the minimum reality must contain.</p>
-          <a data-config-link="amazonProjectZeroUrl" href="#">View the book →</a>
+          <a data-config-link="amazonProjectZeroUrl" href="#">View the book</a>
         </article>
       </section>
     </div>
   </main>
 
+  <section class="engage-band">
+    <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
+      <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
+    </a>
+  </section>
+
   <footer class="footer">
-    <div class="site-shell footer-inner">
-      <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
-        <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
-      </a>
+    <div class="site-shell">
+      <div class="rule" aria-hidden="true"><span></span></div>
       <p class="footer-copy">Ideas matter because they travel. Printed works help them continue.</p>
     </div>
   </footer>

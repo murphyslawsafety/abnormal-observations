@@ -7,13 +7,20 @@
   <title>Begin | Abnormal Observations</title>
   <link rel="icon" href="media/ao-logo.png" type="image/png">
   <link rel="apple-touch-icon" href="media/ao-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
   <header class="topbar">
     <div class="site-shell nav">
-      <a class="nav-brand" href="index.html">
-        <img class="nav-logo" src="media/ao-logo.png" alt="Abnormal Observations">
+      <a class="nav-brand" href="index.html" aria-label="Abnormal Observations home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="nav-wordmark">Abnormal Observations</span>
       </a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
         <span class="nav-toggle-icon" aria-hidden="true"></span>
@@ -30,15 +37,17 @@
     <div class="site-shell">
       <p class="eyebrow">Observation One</p>
       <h1>Where is your next thought?</h1>
+      <div class="rule rule-left" aria-hidden="true"><span></span></div>
       <p class="lead">
         Do not answer. Wait. Notice what appears before the explanation begins.
       </p>
 
       <div class="video-wrap">
         <div class="video-placeholder">
+          <span class="brand-mark brand-mark-lg" aria-hidden="true"></span>
           <div>
-            <strong>Your first YouTube investigation goes here.</strong><br><br>
-            Replace this block with the YouTube embed after the first video is published.
+            <strong>Transmission pending</strong><br>
+            Replace this frame with the first YouTube investigation.
           </div>
         </div>
       </div>
@@ -50,7 +59,7 @@
       </p>
 
       <div class="free-offer">
-        <p class="free-offer-label">Free to read</p>
+        <p class="free-offer-label">Free signal</p>
         <p class="free-offer-copy">
           The complete <em>DON'T THINK</em> is available as a free PDF.
           No signup. No paywall. Read it, share it, begin observing.
@@ -58,18 +67,22 @@
         <a class="btn" data-config-link="dontThinkFreePdfUrl" href="#">Download Free PDF</a>
       </div>
 
-      <div class="button-row" style="justify-content:flex-start">
+      <div class="button-row button-row-start">
         <a class="btn secondary" data-config-link="dontThinkPlaylistUrl" href="#">Watch the Series</a>
         <a class="btn secondary" data-config-link="amazonDontThinkUrl" href="#">Own the Book</a>
       </div>
     </div>
   </main>
 
+  <section class="engage-band">
+    <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
+      <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
+    </a>
+  </section>
+
   <footer class="footer">
-    <div class="site-shell footer-inner">
-      <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
-        <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
-      </a>
+    <div class="site-shell">
+      <div class="rule" aria-hidden="true"><span></span></div>
       <p class="footer-copy">Observe carefully. Question honestly. Continue when ready.</p>
     </div>
   </footer>

@@ -7,47 +7,57 @@
   <title>Abnormal Observations</title>
   <link rel="icon" href="media/ao-logo.png" type="image/png">
   <link rel="apple-touch-icon" href="media/ao-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <main class="hero">
-    <div class="site-shell">
-      <section class="hero-card" aria-labelledby="brand-title">
-        <p class="eyebrow">A revolution in observation</p>
-        <h1 id="brand-title" class="sr-only">Abnormal Observations</h1>
-        <img class="hero-logo" src="media/ao-logo.png" alt="Abnormal Observations">
+<body class="page-home">
+  <div class="noise" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
 
+  <main class="hero">
+    <div class="hero-stage">
+      <p class="eyebrow reveal">A revolution in observation</p>
+
+      <h1 id="brand-title" class="sr-only">Abnormal Observations</h1>
+      <div class="hero-logo-wrap reveal">
+        <img class="hero-logo" src="media/ao-logo.png" alt="Abnormal Observations">
+      </div>
+
+      <div class="signal-block reveal">
         <p class="count-label">Current Observers</p>
         <p class="count" data-observer-count>1</p>
+        <div class="rule" aria-hidden="true"><span></span></div>
+      </div>
 
-        <p class="hero-copy">
-          The world has no shortage of opinions. It needs people willing to
-          observe before they react, question before they conclude, and notice
-          what everyone else overlooked.
-        </p>
+      <p class="hero-copy reveal">
+        The world has no shortage of opinions. It needs people willing to
+        observe before they react, question before they conclude, and notice
+        what everyone else overlooked.
+      </p>
 
-        <div class="button-row">
-          <button class="btn" type="button" data-join>Become One</button>
-        </div>
+      <div class="button-row reveal">
+        <button class="btn" type="button" data-join>Become One</button>
+      </div>
 
-        <div class="observer-result" data-observer-result>
-          <div>You are now</div>
+      <div class="observer-result" data-observer-result>
+        <div class="observer-result-inner">
+          <div class="count-label">Signal acquired</div>
           <div class="observer-number">Observer <span data-observer-number></span></div>
           <div class="button-row">
             <a class="btn" href="begin.html">Begin Observing</a>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </main>
 
-  <footer class="footer">
-    <div class="site-shell footer-inner">
-      <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
-        <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
-      </a>
-    </div>
-  </footer>
+  <section class="engage-band">
+    <a class="engage-link" data-config-link="youtubeChannelUrl" href="#" aria-label="Support Abnormal Observations on YouTube">
+      <img class="engage-banner" src="media/ao-engage.png" alt="If this made you think, we appreciate if you do the things that help keep this going. Like, comment, share, and follow.">
+    </a>
+  </section>
 
   <script src="config.js"></script>
   <script src="app.js"></script>
