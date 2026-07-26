@@ -12,9 +12,13 @@
 
 ## Important note about the counter
 
-The included counter works inside each visitor's browser. It is suitable for previewing the experience, but it is **not yet a shared global counter**.
+The observer count is a **shared global counter** powered by a Cloudflare Durable Object (`/api/observers`).
 
-A real global count requires a tiny free database or serverless function. The cleanest next step is Cloudflare Pages + a free Worker/KV or Supabase. Do not publicly advertise the browser-only count as a verified worldwide number.
+- Every visitor sees the same number.
+- **Become One** assigns the next real observer number and increments the shared count.
+- If the API is temporarily unreachable, the site will not invent a local fake count.
+
+`STARTING_OBSERVER_COUNT` in `wrangler.toml` seeds the counter the first time it is created.
 
 ## Edit your links
 
@@ -45,13 +49,17 @@ This site deploys as a **Worker with static assets** (project name: `cj`).
 
 3. Save, then **Deployments → Retry deployment** (or push to GitHub).
 
-### Global observer counter (optional next step)
+### Global observer counter
 
-1. Create a **KV namespace** (e.g. `ao-observers`).
-2. In **cj → Settings → Variables and Secrets**, add a KV binding named `OBSERVER_KV`.
-3. Or uncomment `[[kv_namespaces]]` in `wrangler.toml` and paste the KV id.
+Deployed automatically with the Worker via a Durable Object binding (`OBSERVER_COUNTER`). No separate KV setup is required.
 
-Until KV is bound, the site still deploys; the counter falls back to local preview mode.
+After deploy, verify:
+
+```
+https://abnormalobservations.com/api/observers
+```
+
+Should return JSON like `{"count":1}`.
 
 ### Manual upload alternative
 

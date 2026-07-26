@@ -6,48 +6,64 @@
   const assignedNumber = document.querySelector("[data-observer-number]");
 
   const base = Number(cfg.startingObserverCount || 1);
-  const stored = localStorage.getItem("aoObserverNumber");
-  const localJoins = Number(localStorage.getItem("aoLocalJoinCount") || 0);
   const counterApiUrl = cfg.counterApiUrl || "";
-  let globalCount = null;
+  const JOINED_KEY = "aoObserverNumber";
+  const GLOBAL_JOIN_KEY = "aoJoinedGlobally";
+
+  let stored = localStorage.getItem(JOINED_KEY);
+  let joinedGlobally = localStorage.getItem(GLOBAL_JOIN_KEY) === "1";
 
   function renderCount(value) {
     if (!countEl) return;
     countEl.textContent = Number(value).toLocaleString("en-US");
   }
 
-  function showStoredObserver() {
-    if (!stored || !result || !assignedNumber) return;
-    assignedNumber.textContent = Number(stored).toLocaleString("en-US");
+  function showAssignedObserver(number) {
+    if (!result || !assignedNumber) return;
+    assignedNumber.textContent = Number(number).toLocaleString("en-US");
     result.classList.add("show");
     if (joinButton) joinButton.textContent = "Continue";
   }
 
-  function persistObserver(number) {
-    localStorage.setItem("aoObserverNumber", String(number));
+  function persistGlobalObserver(number) {
+    localStorage.setItem(JOINED_KEY, String(number));
+    localStorage.setItem(GLOBAL_JOIN_KEY, "1");
+    stored = String(number);
+    joinedGlobally = true;
     renderCount(number);
-    if (assignedNumber) assignedNumber.textContent = Number(number).toLocaleString("en-US");
-    if (result) result.classList.add("show");
+    showAssignedObserver(number);
     if (joinButton) joinButton.textContent = "Begin Observing";
   }
 
-  function joinLocally() {
-    const nextLocalJoin = localJoins + 1;
-    const number = base + nextLocalJoin;
-    localStorage.setItem("aoLocalJoinCount", String(nextLocalJoin));
-    persistObserver(number);
+  function clearLocalPreviewJoin() {
+    localStorage.removeItem(JOINED_KEY);
+    localStorage.removeItem("aoLocalJoinCount");
+    localStorage.removeItem(GLOBAL_JOIN_KEY);
+    stored = null;
+    joinedGlobally = false;
+    if (result) result.classList.remove("show");
+    if (joinButton) joinButton.textContent = "Become One";
   }
 
   async function loadGlobalCount() {
     if (!counterApiUrl || !countEl) return false;
 
     try {
-      const response = await fetch(counterApiUrl, { method: "GET" });
+      const response = await fetch(counterApiUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
       if (!response.ok) return false;
       const data = await response.json();
       if (typeof data.count !== "number") return false;
-      globalCount = data.count;
-      renderCount(globalCount);
+
+      renderCount(data.count);
+
+      // Old local-only joins were never part of the real global count.
+      if (stored && !joinedGlobally) {
+        clearLocalPreviewJoin();
+      }
+
       return true;
     } catch (error) {
       return false;
@@ -58,6 +74,7 @@
     const response = await fetch(counterApiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -69,31 +86,38 @@
       throw new Error("Counter response invalid");
     }
 
-    persistObserver(data.observerNumber);
+    persistGlobalObserver(data.observerNumber);
   }
 
-  renderCount(base + localJoins);
+  renderCount(base);
+
   loadGlobalCount().finally(function () {
-    showStoredObserver();
+    if (stored && joinedGlobally) {
+      showAssignedObserver(stored);
+    }
   });
 
   if (joinButton) {
     joinButton.addEventListener("click", async function () {
-      if (stored) {
+      if (stored && joinedGlobally) {
         window.location.href = "begin.html";
         return;
       }
 
-      joinButton.disabled = true;
+      if (!counterApiUrl) {
+        alert("Observer counter is not configured yet.");
+        return;
+      }
 
-      if (counterApiUrl) {
-        try {
-          await joinGlobally();
-        } catch (error) {
-          joinLocally();
-        }
-      } else {
-        joinLocally();
+      joinButton.disabled = true;
+      const previousLabel = joinButton.textContent;
+      joinButton.textContent = "Connecting…";
+
+      try {
+        await joinGlobally();
+      } catch (error) {
+        joinButton.textContent = previousLabel;
+        alert("Could not reach the observer counter. Please try again in a moment.");
       }
 
       joinButton.disabled = false;

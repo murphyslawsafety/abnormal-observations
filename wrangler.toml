@@ -6,8 +6,6 @@
 #   Deploy command:                        npx wrangler deploy
 #   Non-production branch deploy command:  npx wrangler versions upload
 #   Path / Root directory:                 /
-#
-# Do not create a new application. Edit cj → Settings → Builds.
 
 name = "cj"
 main = "src/index.js"
@@ -18,12 +16,14 @@ directory = "."
 binding = "ASSETS"
 run_worker_first = ["/api/*"]
 
-# Optional: bind a KV namespace in the dashboard as OBSERVER_KV
-# (Settings → Variables and Secrets → KV Namespace Bindings).
-# Uncomment and paste your KV id after creating the namespace:
-# [[kv_namespaces]]
-# binding = "OBSERVER_KV"
-# id = "YOUR_KV_NAMESPACE_ID"
+# Shared observer counter (no separate KV setup required).
+[[durable_objects.bindings]]
+name = "OBSERVER_COUNTER"
+class_name = "ObserverCounter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ObserverCounter"]
 
 [vars]
 STARTING_OBSERVER_COUNT = "1"
