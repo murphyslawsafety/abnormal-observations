@@ -2,8 +2,7 @@ window.AO_CONFIG = {
   // Public count seed used when the global counter is first created.
   startingObserverCount: 1,
 
-  // Global counter endpoint. Works automatically on Cloudflare Pages.
-  // Leave blank to use the local preview counter only.
+  // Global counter endpoint (Worker route). Leave blank for local-only preview.
   counterApiUrl: "/api/observers",
 
   logoUrl: "media/ao-logo.png",

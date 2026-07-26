@@ -1,23 +1,29 @@
-# Cloudflare Pages project.
-# Project name in the dashboard: cj
+# Cloudflare Worker + static assets.
+# Dashboard project name: cj (Workers & Pages → cj)
 #
-# Build settings (Workers & Pages → cj → Settings → Builds):
+# Build settings for the EXISTING cj project:
 #   Build command:                         (leave empty)
-#   Deploy command:                        npx wrangler pages deploy .
-#   Non-production branch deploy command:  npx wrangler pages deploy .
+#   Deploy command:                        npx wrangler deploy
+#   Non-production branch deploy command:  npx wrangler versions upload
 #   Path / Root directory:                 /
 #
-# Do NOT use "npx wrangler deploy" — that is for Workers, not Pages.
+# Do not create a new application. Edit cj → Settings → Builds.
 
 name = "cj"
+main = "src/index.js"
 compatibility_date = "2024-08-01"
-pages_build_output_dir = "."
 
-# Create a KV namespace in Cloudflare, paste its ID below, then bind OBSERVER_KV
-# in Pages → Settings → Functions → KV namespace bindings.
-[[kv_namespaces]]
-binding = "OBSERVER_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# Optional: bind a KV namespace in the dashboard as OBSERVER_KV
+# (Settings → Variables and Secrets → KV Namespace Bindings).
+# Uncomment and paste your KV id after creating the namespace:
+# [[kv_namespaces]]
+# binding = "OBSERVER_KV"
+# id = "YOUR_KV_NAMESPACE_ID"
 
 [vars]
 STARTING_OBSERVER_COUNT = "1"

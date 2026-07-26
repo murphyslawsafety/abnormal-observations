@@ -27,22 +27,31 @@ Open `config.js` and replace the placeholder links with:
 
 You can also change `startingObserverCount`.
 
-## Free deployment option: Cloudflare Pages
+## Free deployment option: Cloudflare Workers (+ static assets)
 
-This repo is a **Pages** project (static site + `/functions` API), not a Worker.
+This site deploys as a **Worker with static assets** (project name: `cj`).
 
-### Git-connected build settings
+### Use your existing project — do not create a new one
 
-In **Workers & Pages → your project → Settings → Builds**:
+1. Open **Workers & Pages → cj → Settings → Builds**
+2. Set:
 
 | Setting | Value |
 |---|---|
 | Build command | *(leave empty)* |
-| Deploy command | `npx wrangler pages deploy .` |
-| Non-production branch deploy command | `npx wrangler pages deploy .` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production branch deploy command | `npx wrangler versions upload` |
 | Path / Root directory | `/` |
 
-Do **not** use `npx wrangler deploy` — that is for Workers and will fail.
+3. Save, then **Deployments → Retry deployment** (or push to GitHub).
+
+### Global observer counter (optional next step)
+
+1. Create a **KV namespace** (e.g. `ao-observers`).
+2. In **cj → Settings → Variables and Secrets**, add a KV binding named `OBSERVER_KV`.
+3. Or uncomment `[[kv_namespaces]]` in `wrangler.toml` and paste the KV id.
+
+Until KV is bound, the site still deploys; the counter falls back to local preview mode.
 
 ### Manual upload alternative
 

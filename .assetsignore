@@ -1,0 +1,9 @@
+.git
+.github
+functions
+src
+wrangler.toml
+README.md
+*.md
+.assetsignore
+node_modules

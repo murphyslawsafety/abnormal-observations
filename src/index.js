@@ -21,9 +21,7 @@ async function readCount(kv, env) {
   return Number(stored);
 }
 
-export async function onRequest(context) {
-  const { request, env } = context;
-
+async function handleObservers(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: JSON_HEADERS });
   }
@@ -55,3 +53,15 @@ export async function onRequest(context) {
     headers: JSON_HEADERS,
   });
 }
+
+export default {
+  async fetch(request, env) {
+    const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/observers" || pathname === "/api/observers/") {
+      return handleObservers(request, env);
+    }
+
+    return env.ASSETS.fetch(request);
+  },
+};
