@@ -1,8 +1,20 @@
+# Cloudflare Pages project (NOT a standalone Worker).
+#
+# Dashboard settings (Workers & Pages → your project → Settings → Builds):
+#   Framework preset: None
+#   Build command:    (leave empty)
+#   Build output dir: /
+#   Deploy command:   (leave empty — do NOT use "npx wrangler deploy")
+#
+# Cloudflare publishes this repo automatically on git push.
+# Pages Functions live in /functions (e.g. /api/observers).
+
 name = "abnormal-observations"
 compatibility_date = "2024-08-01"
 pages_build_output_dir = "."
 
-# Create a KV namespace in Cloudflare, then paste its ID below.
+# Create a KV namespace in Cloudflare, paste its ID below, then bind OBSERVER_KV
+# in Pages → Settings → Functions → KV namespace bindings.
 [[kv_namespaces]]
 binding = "OBSERVER_KV"
 id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
