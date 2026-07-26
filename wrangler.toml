@@ -1,15 +1,15 @@
-# Cloudflare Pages project (NOT a standalone Worker).
+# Cloudflare Pages project.
+# Project name in the dashboard: cj
 #
-# Dashboard settings (Workers & Pages → your project → Settings → Builds):
-#   Framework preset: None
-#   Build command:    (leave empty)
-#   Build output dir: /
-#   Deploy command:   (leave empty — do NOT use "npx wrangler deploy")
+# Build settings (Workers & Pages → cj → Settings → Builds):
+#   Build command:                         (leave empty)
+#   Deploy command:                        npx wrangler pages deploy .
+#   Non-production branch deploy command:  npx wrangler pages deploy .
+#   Path / Root directory:                 /
 #
-# Cloudflare publishes this repo automatically on git push.
-# Pages Functions live in /functions (e.g. /api/observers).
+# Do NOT use "npx wrangler deploy" — that is for Workers, not Pages.
 
-name = "abnormal-observations"
+name = "cj"
 compatibility_date = "2024-08-01"
 pages_build_output_dir = "."
 

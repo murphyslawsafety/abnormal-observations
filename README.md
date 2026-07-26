@@ -29,6 +29,23 @@ You can also change `startingObserverCount`.
 
 ## Free deployment option: Cloudflare Pages
 
+This repo is a **Pages** project (static site + `/functions` API), not a Worker.
+
+### Git-connected build settings
+
+In **Workers & Pages → your project → Settings → Builds**:
+
+| Setting | Value |
+|---|---|
+| Build command | *(leave empty)* |
+| Deploy command | `npx wrangler pages deploy .` |
+| Non-production branch deploy command | `npx wrangler pages deploy .` |
+| Path / Root directory | `/` |
+
+Do **not** use `npx wrangler deploy` — that is for Workers and will fail.
+
+### Manual upload alternative
+
 1. Create a free Cloudflare account.
 2. Open **Workers & Pages**.
 3. Choose **Create application → Pages → Upload assets**.
