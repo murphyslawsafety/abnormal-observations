@@ -41,6 +41,24 @@
         <button class="btn" type="button" data-join>Become One</button>
       </div>
 
+      <div class="reclaim-panel" data-reclaim-panel hidden>
+        <p class="reclaim-label">Restore your Observer number</p>
+        <p class="reclaim-copy" data-reclaim-message>
+          Already an Observer? Enter your number to restore it on this device.
+        </p>
+        <div class="reclaim-row">
+          <input
+            class="reclaim-input"
+            data-reclaim-input
+            type="number"
+            min="1"
+            inputmode="numeric"
+            placeholder="Your number"
+            aria-label="Your Observer number">
+          <button class="btn secondary" type="button" data-reclaim-restore>Restore my number</button>
+        </div>
+      </div>
+
       <div class="observer-result" data-observer-result>
         <div class="observer-result-inner">
           <div class="count-label">Your designation</div>

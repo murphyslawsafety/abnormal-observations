@@ -27,6 +27,10 @@ function numberKey(n) {
   return `num:${n}`;
 }
 
+function isReleasableHolder(holder) {
+  return typeof holder === "string" && holder.startsWith("test-restore-");
+}
+
 /** Shared global observer registry (one Durable Object for the whole site). */
 export class ObserverCounter {
   constructor(state, env) {
@@ -70,6 +74,13 @@ export class ObserverCounter {
     });
   }
 
+  async releaseVisitorAssignment(visitorId, observerNumber) {
+    const mapped = await this.state.storage.get(numberKey(observerNumber));
+    if (mapped === visitorId) {
+      await this.state.storage.delete(numberKey(observerNumber));
+    }
+  }
+
   async setCount(value) {
     const next = Math.max(startingCount(this.env), Math.floor(Number(value)));
     if (!Number.isFinite(next)) {
@@ -79,13 +90,32 @@ export class ObserverCounter {
     return json({ count: next });
   }
 
-  async claimVisitor(visitorId, legacyObserverNumber) {
+  async releaseNumber(observerNumber) {
+    const n = Math.floor(Number(observerNumber));
+    if (!Number.isFinite(n) || n < 1) {
+      return json({ error: "Invalid observer number." }, 400);
+    }
+
+    const holder = await this.state.storage.get(numberKey(n));
+    if (holder) {
+      await this.state.storage.delete(visitorKey(holder));
+    }
+    await this.state.storage.delete(numberKey(n));
+    await this.state.storage.delete(`meta:${n}`);
+
+    return json({ released: n });
+  }
+
+  async claimVisitor(visitorId, legacyObserverNumber, reclaim = false) {
     if (!visitorId || typeof visitorId !== "string" || visitorId.length < 8) {
       return json({ error: "A valid visitorId is required." }, 400);
     }
 
+    const baseline = startingCount(this.env);
     const existing = await this.state.storage.get(visitorKey(visitorId));
-    if (typeof existing === "number") {
+    const legacy = Math.floor(Number(legacyObserverNumber));
+
+    if (typeof existing === "number" && !reclaim) {
       const count = await this.getCount();
       return json({
         count,
@@ -94,15 +124,39 @@ export class ObserverCounter {
       });
     }
 
-    const legacy = Math.floor(Number(legacyObserverNumber));
-    if (Number.isFinite(legacy) && legacy >= 1) {
+    if (Number.isFinite(legacy) && legacy >= 1 && (reclaim || legacy <= baseline)) {
       const holder = await this.state.storage.get(numberKey(legacy));
-      if (!holder || holder === visitorId) {
+      const canTake =
+        !holder ||
+        holder === visitorId ||
+        isReleasableHolder(holder) ||
+        (reclaim && legacy <= baseline && typeof existing === "number" && existing > baseline);
+
+      if (canTake) {
+        if (holder && holder !== visitorId) {
+          await this.state.storage.delete(visitorKey(holder));
+        }
+        if (typeof existing === "number" && existing !== legacy) {
+          await this.releaseVisitorAssignment(visitorId, existing);
+        }
         return this.bindNumber(visitorId, legacy, {
-          returning: Boolean(holder),
+          returning: existing === legacy,
           restored: true,
         });
       }
+
+      if (reclaim) {
+        return json({ error: "That Observer number is already claimed by someone else." }, 409);
+      }
+    }
+
+    if (typeof existing === "number") {
+      const count = await this.getCount();
+      return json({
+        count,
+        observerNumber: existing,
+        returning: true,
+      });
     }
 
     const count = await this.getCount();
@@ -156,7 +210,11 @@ export class ObserverCounter {
       } catch (error) {
         return json({ error: "Expected JSON body with visitorId." }, 400);
       }
-      return this.claimVisitor(body.visitorId, body.legacyObserverNumber);
+      return this.claimVisitor(
+        body.visitorId,
+        body.legacyObserverNumber,
+        Boolean(body.reclaim)
+      );
     }
 
     if (request.method === "PUT") {
@@ -164,7 +222,10 @@ export class ObserverCounter {
       try {
         body = await request.json();
       } catch (error) {
-        return json({ error: "Expected JSON body with count." }, 400);
+        return json({ error: "Expected JSON body." }, 400);
+      }
+      if (body.release !== undefined) {
+        return this.releaseNumber(body.release);
       }
       return this.setCount(body.count);
     }

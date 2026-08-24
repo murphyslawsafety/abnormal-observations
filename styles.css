@@ -347,6 +347,61 @@ a { color: inherit; }
   text-transform: uppercase;
 }
 
+.reclaim-panel {
+  margin-top: 28px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+
+.reclaim-panel[hidden] {
+  display: none;
+}
+
+.reclaim-label {
+  margin: 0 0 8px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.reclaim-copy {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.reclaim-copy.is-error {
+  color: #ffb4b4;
+}
+
+.reclaim-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reclaim-input {
+  flex: 1 1 120px;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.reclaim-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
 /* ——— Nav ——— */
 .topbar {
   position: sticky;
@@ -865,6 +920,7 @@ a { color: inherit; }
     width: 100%;
   }
 
+  .reclaim-row .btn,
   .button-row .btn,
   .free-offer .btn {
     width: 100%;
