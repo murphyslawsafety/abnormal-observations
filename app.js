@@ -9,9 +9,11 @@
   const counterApiUrl = cfg.counterApiUrl || "";
   const JOINED_KEY = "aoObserverNumber";
   const GLOBAL_JOIN_KEY = "aoJoinedGlobally";
+  const AUTO_JOIN_DELAY_MS = 1800;
 
   let stored = localStorage.getItem(JOINED_KEY);
   let joinedGlobally = localStorage.getItem(GLOBAL_JOIN_KEY) === "1";
+  let joinInFlight = false;
 
   function renderCount(value) {
     if (!countEl) return;
@@ -52,12 +54,19 @@
       const response = await fetch(counterApiUrl, {
         method: "GET",
         cache: "no-store",
+        headers: { Accept: "application/json" },
       });
       if (!response.ok) return false;
       const data = await response.json();
       if (typeof data.count !== "number") return false;
 
-      renderCount(data.count);
+      // After joining, keep personal number visible but sync public total from server.
+      if (!(stored && joinedGlobally)) {
+        renderCount(data.count);
+      } else {
+        renderCount(data.count);
+        showAssignedObserver(stored);
+      }
 
       // Old local-only joins were never part of the real global count.
       if (stored && !joinedGlobally) {
@@ -71,22 +80,62 @@
   }
 
   async function joinGlobally() {
-    const response = await fetch(counterApiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
+    if (joinInFlight) return null;
+    if (stored && joinedGlobally) return Number(stored);
+
+    joinInFlight = true;
+
+    try {
+      const response = await fetch(counterApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        cache: "no-store",
+        body: "{}",
+      });
+
+      if (!response.ok) {
+        throw new Error("Counter request failed (" + response.status + ")");
+      }
+
+      const data = await response.json();
+      if (typeof data.observerNumber !== "number") {
+        throw new Error("Counter response invalid");
+      }
+
+      persistGlobalObserver(data.observerNumber);
+      return data.observerNumber;
+    } finally {
+      joinInFlight = false;
+    }
+  }
+
+  function scheduleAutoJoin() {
+    // First real visit claims an observer number automatically.
+    // Requires JS + a visible tab so casual crawlers are less likely to inflate the count.
+    if (!counterApiUrl) return;
+    if (stored && joinedGlobally) return;
+
+    let done = false;
+
+    function attempt() {
+      if (done) return;
+      if (document.visibilityState !== "visible") return;
+      done = true;
+      joinGlobally().catch(function () {
+        // Leave Become One available as a manual retry on the homepage.
+        done = false;
+      });
+    }
+
+    setTimeout(attempt, AUTO_JOIN_DELAY_MS);
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        setTimeout(attempt, 400);
+      }
     });
-
-    if (!response.ok) {
-      throw new Error("Counter request failed");
-    }
-
-    const data = await response.json();
-    if (typeof data.observerNumber !== "number") {
-      throw new Error("Counter response invalid");
-    }
-
-    persistGlobalObserver(data.observerNumber);
   }
 
   renderCount(base);
@@ -95,7 +144,19 @@
     if (stored && joinedGlobally) {
       showAssignedObserver(stored);
     }
+    // Enroll from any page so links to Begin / Works still assign a number.
+    scheduleAutoJoin();
   });
+
+  // Keep the public total fresh while the page stays open.
+  if (countEl && counterApiUrl) {
+    setInterval(function () {
+      loadGlobalCount();
+    }, 20000);
+    window.addEventListener("focus", function () {
+      loadGlobalCount();
+    });
+  }
 
   if (joinButton) {
     joinButton.addEventListener("click", async function () {

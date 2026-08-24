@@ -1,5 +1,7 @@
 const JSON_HEADERS = {
   "Content-Type": "application/json",
+  "Cache-Control": "no-store, no-cache, must-revalidate",
+  "Pragma": "no-cache",
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -51,7 +53,7 @@ export class ObserverCounter {
 
 async function handleObservers(request, env) {
   if (request.method === "OPTIONS") {
-    return new Response(null, { headers: JSON_HEADERS });
+    return new Response(null, { status: 204, headers: JSON_HEADERS });
   }
 
   if (!env.OBSERVER_COUNTER) {
@@ -60,7 +62,12 @@ async function handleObservers(request, env) {
 
   const id = env.OBSERVER_COUNTER.idFromName("global");
   const stub = env.OBSERVER_COUNTER.get(id);
-  return stub.fetch(request);
+  // Forward method/body explicitly so POST is never dropped.
+  return stub.fetch(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.method === "POST" ? await request.text() : undefined,
+  });
 }
 
 export default {

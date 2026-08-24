@@ -14,9 +14,11 @@
 
 The observer count is a **shared global counter** powered by a Cloudflare Durable Object (`/api/observers`).
 
-- Every visitor sees the same number.
-- **Become One** assigns the next real observer number and increments the shared count.
-- If the API is temporarily unreachable, the site will not invent a local fake count.
+- Every visitor sees the same public total.
+- A first homepage visit (visible tab, JavaScript on) automatically claims the next Observer number after a short delay.
+- **Become One** claims immediately if auto-join has not finished yet, or continues into the site once assigned.
+- Cloudflare page views alone are not the same as observer designations — bots and bounced hits do not all become numbers.
+- Verify live: `GET https://abnormalobservations.com/api/observers`
 
 `STARTING_OBSERVER_COUNT` in `wrangler.toml` seeds the counter the first time it is created.
 
