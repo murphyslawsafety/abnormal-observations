@@ -3,12 +3,13 @@ const JSON_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate",
   "Pragma": "no-cache",
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 function startingCount(env) {
-  return Number(env.STARTING_OBSERVER_COUNT || "1");
+  const n = Number(env.STARTING_OBSERVER_COUNT || "1");
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
 }
 
 function json(data, status = 200) {
@@ -26,12 +27,26 @@ export class ObserverCounter {
   }
 
   async getCount() {
-    const stored = await this.state.storage.get("count");
-    if (typeof stored === "number") return stored;
+    const baseline = startingCount(this.env);
+    let stored = await this.state.storage.get("count");
 
-    const seed = startingCount(this.env);
-    await this.state.storage.put("count", seed);
-    return seed;
+    // Floor raises the public total when STARTING_OBSERVER_COUNT is increased
+    // (used to restore interest lost while the counter was broken).
+    if (typeof stored !== "number" || stored < baseline) {
+      stored = baseline;
+      await this.state.storage.put("count", stored);
+    }
+
+    return stored;
+  }
+
+  async setCount(value) {
+    const next = Math.max(1, Math.floor(Number(value)));
+    if (!Number.isFinite(next)) {
+      return json({ error: "Invalid count" }, 400);
+    }
+    await this.state.storage.put("count", next);
+    return json({ count: next });
   }
 
   async fetch(request) {
@@ -47,8 +62,25 @@ export class ObserverCounter {
       return json({ count: next, observerNumber: next });
     }
 
+    if (request.method === "PUT") {
+      let body = {};
+      try {
+        body = await request.json();
+      } catch (error) {
+        return json({ error: "Expected JSON body with count" }, 400);
+      }
+      return this.setCount(body.count);
+    }
+
     return json({ error: "Method not allowed" }, 405);
   }
+}
+
+function adminAuthorized(request, env) {
+  const secret = env.OBSERVER_ADMIN_SECRET;
+  if (!secret) return false;
+  const header = request.headers.get("Authorization") || "";
+  return header === "Bearer " + secret;
 }
 
 async function handleObservers(request, env) {
@@ -60,13 +92,19 @@ async function handleObservers(request, env) {
     return json({ error: "Observer counter is not configured." }, 503);
   }
 
+  if (request.method === "PUT" && !adminAuthorized(request, env)) {
+    return json({ error: "Unauthorized" }, 401);
+  }
+
   const id = env.OBSERVER_COUNTER.idFromName("global");
   const stub = env.OBSERVER_COUNTER.get(id);
-  // Forward method/body explicitly so POST is never dropped.
   return stub.fetch(request.url, {
     method: request.method,
     headers: request.headers,
-    body: request.method === "POST" ? await request.text() : undefined,
+    body:
+      request.method === "POST" || request.method === "PUT"
+        ? await request.text()
+        : undefined,
   });
 }
 

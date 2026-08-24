@@ -10,17 +10,24 @@
 - Mobile-responsive layout
 - No framework, database, or paid software required
 
-## Important note about the counter
+## Correcting the public observer total
 
-The observer count is a **shared global counter** powered by a Cloudflare Durable Object (`/api/observers`).
+If the shared counter under-reports real interest (for example after an outage), raise the floor:
 
-- Every visitor sees the same public total.
-- A first homepage visit (visible tab, JavaScript on) automatically claims the next Observer number after a short delay.
-- **Become One** claims immediately if auto-join has not finished yet, or continues into the site once assigned.
-- Cloudflare page views alone are not the same as observer designations — bots and bounced hits do not all become numbers.
-- Verify live: `GET https://abnormalobservations.com/api/observers`
+1. Set `STARTING_OBSERVER_COUNT` in `wrangler.toml` to the restored total.
+2. Redeploy. The live count becomes `max(current, STARTING_OBSERVER_COUNT)`.
+3. New observers continue incrementing from there.
 
-`STARTING_OBSERVER_COUNT` in `wrangler.toml` seeds the counter the first time it is created.
+Good sources for that number: Cloudflare **unique visitors**, or YouTube Studio **external link clicks** to the site — not raw Shorts views (views ≠ site visits).
+
+Optional admin set: add secret `OBSERVER_ADMIN_SECRET` in the Worker dashboard, then:
+
+```bash
+curl -X PUT https://abnormalobservations.com/api/observers \
+  -H "Authorization: Bearer YOUR_SECRET" \
+  -H "Content-Type: application/json" \
+  -d "{\"count\":1234}"
+```
 
 ## Edit your links
 

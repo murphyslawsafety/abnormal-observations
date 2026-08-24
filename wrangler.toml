@@ -26,4 +26,10 @@ tag = "v1"
 new_sqlite_classes = ["ObserverCounter"]
 
 [vars]
+# Public observer total will never display below this number.
+# Raise this to restore lost joins from the broken-counter period,
+# then redeploy. New joins continue counting up from the floor.
 STARTING_OBSERVER_COUNT = "1"
+
+# Optional: set OBSERVER_ADMIN_SECRET in Cloudflare dashboard to allow
+# PUT /api/observers with Authorization: Bearer <secret> and {"count":N}
