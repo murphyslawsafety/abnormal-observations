@@ -28,10 +28,22 @@ curl "https://abnormalobservations.com/api/observers?number=13" \
 
 Returns the anonymous visitor id assigned to Observer 13 (for verification when someone claims the prize).
 
-### .org traffic
+### .org traffic (connect the same Worker)
 
-If `.org` uses the same Worker deployment, it shares this counter automatically.
-If it is a separate project, point it at the same API or raise the baseline to include `.org` unique visitors.
+`.com` runs the `cj` Worker. `.org` must use the **same Worker** or it will not share the counter.
+
+**Option A — Dashboard (matches your screenshot):**
+
+1. Open **abnormalobservations.org → Overview**
+2. Under **Connect a Worker**, click **Connect Worker**
+3. Select **`cj`** (the same Worker as `.com`)
+4. Save
+
+**Option B — Automatic on deploy:**  
+`wrangler.toml` now includes routes for both `.com` and `.org`. The next deploy attaches them if both zones are in your Cloudflare account.
+
+After connecting, verify: `https://abnormalobservations.org/api/observers`  
+Should return the same count as `.com`.
 
 ## Edit your links
 

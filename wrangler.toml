@@ -16,6 +16,23 @@ directory = "."
 binding = "ASSETS"
 run_worker_first = ["/api/*"]
 
+# Serve the same site + shared counter on both domains.
+[[routes]]
+pattern = "abnormalobservations.com/*"
+zone_name = "abnormalobservations.com"
+
+[[routes]]
+pattern = "www.abnormalobservations.com/*"
+zone_name = "abnormalobservations.com"
+
+[[routes]]
+pattern = "abnormalobservations.org/*"
+zone_name = "abnormalobservations.org"
+
+[[routes]]
+pattern = "www.abnormalobservations.org/*"
+zone_name = "abnormalobservations.org"
+
 # Shared observer counter (no separate KV setup required).
 [[durable_objects.bindings]]
 name = "OBSERVER_COUNTER"
