@@ -46,6 +46,30 @@ export class ObserverCounter {
     return stored;
   }
 
+  async bindNumber(visitorId, observerNumber, options = {}) {
+    const count = await this.getCount();
+    const finalCount = Math.max(count, observerNumber);
+
+    await this.state.storage.put("count", finalCount);
+    await this.state.storage.put(visitorKey(visitorId), observerNumber);
+    await this.state.storage.put(numberKey(observerNumber), visitorId);
+
+    const existingMeta = (await this.state.storage.get(`meta:${observerNumber}`)) || {};
+    if (!existingMeta.assignedAt) {
+      await this.state.storage.put(`meta:${observerNumber}`, {
+        assignedAt: Date.now(),
+        restored: Boolean(options.restored),
+      });
+    }
+
+    return json({
+      count: finalCount,
+      observerNumber,
+      returning: Boolean(options.returning),
+      restored: Boolean(options.restored),
+    });
+  }
+
   async setCount(value) {
     const next = Math.max(startingCount(this.env), Math.floor(Number(value)));
     if (!Number.isFinite(next)) {
@@ -55,15 +79,14 @@ export class ObserverCounter {
     return json({ count: next });
   }
 
-  async claimVisitor(visitorId) {
+  async claimVisitor(visitorId, legacyObserverNumber) {
     if (!visitorId || typeof visitorId !== "string" || visitorId.length < 8) {
       return json({ error: "A valid visitorId is required." }, 400);
     }
 
-    const count = await this.getCount();
     const existing = await this.state.storage.get(visitorKey(visitorId));
-
     if (typeof existing === "number") {
+      const count = await this.getCount();
       return json({
         count,
         observerNumber: existing,
@@ -71,19 +94,20 @@ export class ObserverCounter {
       });
     }
 
-    const observerNumber = count + 1;
-    await this.state.storage.put("count", observerNumber);
-    await this.state.storage.put(visitorKey(visitorId), observerNumber);
-    await this.state.storage.put(numberKey(observerNumber), visitorId);
-    await this.state.storage.put(`meta:${observerNumber}`, {
-      assignedAt: Date.now(),
-    });
+    const legacy = Math.floor(Number(legacyObserverNumber));
+    if (Number.isFinite(legacy) && legacy >= 1) {
+      const holder = await this.state.storage.get(numberKey(legacy));
+      if (!holder || holder === visitorId) {
+        return this.bindNumber(visitorId, legacy, {
+          returning: Boolean(holder),
+          restored: true,
+        });
+      }
+    }
 
-    return json({
-      count: observerNumber,
-      observerNumber,
-      returning: false,
-    });
+    const count = await this.getCount();
+    const observerNumber = count + 1;
+    return this.bindNumber(visitorId, observerNumber, { returning: false });
   }
 
   async lookupNumber(observerNumber) {
@@ -102,6 +126,7 @@ export class ObserverCounter {
       observerNumber: n,
       visitorId,
       assignedAt: meta.assignedAt || null,
+      restored: Boolean(meta.restored),
     });
   }
 
@@ -131,7 +156,7 @@ export class ObserverCounter {
       } catch (error) {
         return json({ error: "Expected JSON body with visitorId." }, 400);
       }
-      return this.claimVisitor(body.visitorId);
+      return this.claimVisitor(body.visitorId, body.legacyObserverNumber);
     }
 
     if (request.method === "PUT") {

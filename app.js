@@ -13,6 +13,13 @@
   const AUTO_CLAIM_DELAY_MS = 1200;
 
   let claimInFlight = false;
+  let syncedThisSession = false;
+
+  function migrateLegacyKeys() {
+    if (localStorage.getItem("aoJoinedGlobally") === "1") {
+      localStorage.setItem(CLAIMED_KEY, "1");
+    }
+  }
 
   function getVisitorId() {
     let id = localStorage.getItem(VISITOR_KEY);
@@ -50,6 +57,7 @@
   function persistClaim(data) {
     localStorage.setItem(NUMBER_KEY, String(data.observerNumber));
     localStorage.setItem(CLAIMED_KEY, "1");
+    syncedThisSession = true;
     renderCount(data.count);
     renderPersonalNumber(data.observerNumber);
   }
@@ -73,57 +81,20 @@
     }
   }
 
-  async function restoreExistingClaim() {
-    if (!counterApiUrl) return false;
-
-    const visitorId = getVisitorId();
-    const stored = getStoredNumber();
-
-    try {
-      const response = await fetch(
-        counterApiUrl + "?visitorId=" + encodeURIComponent(visitorId),
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        }
-      );
-
-      if (!response.ok) return false;
-      const data = await response.json();
-
-      if (typeof data.observerNumber === "number") {
-        persistClaim(data);
-        return true;
-      }
-
-      // Local number from an old session — re-claim under this visitor id.
-      if (stored && localStorage.getItem(CLAIMED_KEY) === "1") {
-        return claimObserver(true);
-      }
-
-      return false;
-    } catch (error) {
-      if (stored && localStorage.getItem(CLAIMED_KEY) === "1") {
-        renderPersonalNumber(stored);
-        return true;
-      }
-      return false;
-    }
-  }
-
-  async function claimObserver(silent) {
+  async function syncObserver(silent) {
     if (!counterApiUrl) {
       if (!silent) alert("Observer counter is not configured yet.");
       return null;
     }
 
     if (claimInFlight) return getStoredNumber();
-    if (getStoredNumber() && localStorage.getItem(CLAIMED_KEY) === "1") {
-      return getStoredNumber();
-    }
-
     claimInFlight = true;
+
+    migrateLegacyKeys();
+
+    const payload = { visitorId: getVisitorId() };
+    const legacy = getStoredNumber();
+    if (legacy) payload.legacyObserverNumber = legacy;
 
     try {
       const response = await fetch(counterApiUrl, {
@@ -133,7 +104,7 @@
           Accept: "application/json",
         },
         cache: "no-store",
-        body: JSON.stringify({ visitorId: getVisitorId() }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -148,6 +119,11 @@
       persistClaim(data);
       return data.observerNumber;
     } catch (error) {
+      if (legacy && localStorage.getItem(CLAIMED_KEY) === "1") {
+        renderPersonalNumber(legacy);
+        await fetchPublicCount();
+        return legacy;
+      }
       if (!silent) {
         alert("Could not reach the observer counter. Please try again in a moment.");
       }
@@ -158,16 +134,19 @@
   }
 
   function scheduleAutoClaim() {
-    if (!counterApiUrl) return;
-    if (getStoredNumber() && localStorage.getItem(CLAIMED_KEY) === "1") return;
+    if (!counterApiUrl || syncedThisSession) return;
+    if (getStoredNumber()) {
+      syncObserver(true);
+      return;
+    }
 
     let done = false;
 
     function attempt() {
-      if (done) return;
+      if (done || syncedThisSession) return;
       if (document.visibilityState !== "visible") return;
       done = true;
-      claimObserver(true).catch(function () {
+      syncObserver(true).catch(function () {
         done = false;
       });
     }
@@ -180,23 +159,30 @@
     });
   }
 
-  const fallback = Number(cfg.startingObserverCount || 1);
-  renderCount(fallback);
+  migrateLegacyKeys();
+  renderCount(Number(cfg.startingObserverCount || 1));
 
-  restoreExistingClaim()
-    .finally(function () {
-      fetchPublicCount();
+  fetchPublicCount().finally(function () {
+    if (getStoredNumber() || localStorage.getItem(CLAIMED_KEY) === "1") {
+      syncObserver(true);
+    } else {
       scheduleAutoClaim();
-    });
+    }
+  });
 
   if (countEl && counterApiUrl) {
     setInterval(fetchPublicCount, 20000);
-    window.addEventListener("focus", fetchPublicCount);
+    window.addEventListener("focus", function () {
+      fetchPublicCount();
+      if (getStoredNumber() || localStorage.getItem(CLAIMED_KEY) === "1") {
+        syncObserver(true);
+      }
+    });
   }
 
   if (joinButton) {
     joinButton.addEventListener("click", async function () {
-      if (getStoredNumber() && localStorage.getItem(CLAIMED_KEY) === "1") {
+      if (syncedThisSession && getStoredNumber()) {
         window.location.href = "begin.html";
         return;
       }
@@ -205,12 +191,9 @@
       const previousLabel = joinButton.textContent;
       joinButton.textContent = "Claiming…";
 
-      await claimObserver(false);
+      await syncObserver(false);
 
-      joinButton.textContent =
-        getStoredNumber() && localStorage.getItem(CLAIMED_KEY) === "1"
-          ? "Continue"
-          : previousLabel;
+      joinButton.textContent = getStoredNumber() ? "Continue" : previousLabel;
       joinButton.disabled = false;
     });
   }
