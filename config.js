@@ -18,6 +18,8 @@ window.AO_CONFIG = {
   amazonBalanceIdentityUrl: "https://www.amazon.com/dp/B0GMWFP8N5",
   amazonProjectZeroUrl: "https://www.amazon.com/dp/B0HB8V5BCB",
 
+  merchUrl: "https://shop.abnormalobservations.com",
+
   // Optional contact / email signup link.
   emailSignupUrl: "#"
 };
