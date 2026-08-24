@@ -419,6 +419,22 @@ a { color: inherit; }
   transform: scaleX(1);
 }
 
+.nav-observer {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+.nav-observer[hidden] {
+  display: none;
+}
+
 .nav-toggle {
   display: none;
   align-items: center;
@@ -840,6 +856,13 @@ a { color: inherit; }
 
   .nav-links a::after {
     display: none;
+  }
+
+  .nav-observer {
+    order: -1;
+    margin-bottom: 8px;
+    text-align: center;
+    width: 100%;
   }
 
   .button-row .btn,

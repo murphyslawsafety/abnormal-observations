@@ -10,24 +10,28 @@
 - Mobile-responsive layout
 - No framework, database, or paid software required
 
-## Correcting the public observer total
+## Observer counter model
 
-If the shared counter under-reports real interest (for example after an outage), raise the floor:
+- **Current Observers** = total unique observers (public count).
+- **Your number** = permanent designation, tied to this browser via a private visitor id.
+- Baseline restored to **1,570** from Cloudflare unique visitors on `.com` before the counter worked.
+- New visitors receive **1571, 1572, …** and keep that number on return visits.
 
-1. Set `STARTING_OBSERVER_COUNT` in `wrangler.toml` to the restored total.
-2. Redeploy. The live count becomes `max(current, STARTING_OBSERVER_COUNT)`.
-3. New observers continue incrementing from there.
+### Lucky-number promotions
 
-Good sources for that number: Cloudflare **unique visitors**, or YouTube Studio **external link clicks** to the site — not raw Shorts views (views ≠ site visits).
-
-Optional admin set: add secret `OBSERVER_ADMIN_SECRET` in the Worker dashboard, then:
+Set `OBSERVER_ADMIN_SECRET` in the Cloudflare Worker dashboard, then:
 
 ```bash
-curl -X PUT https://abnormalobservations.com/api/observers \
-  -H "Authorization: Bearer YOUR_SECRET" \
-  -H "Content-Type: application/json" \
-  -d "{\"count\":1234}"
+curl "https://abnormalobservations.com/api/observers?number=13" \
+  -H "Authorization: Bearer YOUR_SECRET"
 ```
+
+Returns the anonymous visitor id assigned to Observer 13 (for verification when someone claims the prize).
+
+### .org traffic
+
+If `.org` uses the same Worker deployment, it shares this counter automatically.
+If it is a separate project, point it at the same API or raise the baseline to include `.org` unique visitors.
 
 ## Edit your links
 

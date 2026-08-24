@@ -1,6 +1,6 @@
 window.AO_CONFIG = {
-  // Public count seed used when the global counter is first created.
-  startingObserverCount: 1,
+  // Display fallback before the API responds (matches wrangler.toml baseline).
+  startingObserverCount: 1570,
 
   // Global counter endpoint (Worker route). Leave blank for local-only preview.
   counterApiUrl: "/api/observers",

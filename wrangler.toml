@@ -26,10 +26,10 @@ tag = "v1"
 new_sqlite_classes = ["ObserverCounter"]
 
 [vars]
-# Public observer total will never display below this number.
-# Raise this to restore lost joins from the broken-counter period,
-# then redeploy. New joins continue counting up from the floor.
-STARTING_OBSERVER_COUNT = "1"
+# Restored baseline: Cloudflare unique visitors on abnormalobservations.com
+# before the shared counter worked. New visitors continue from here.
+STARTING_OBSERVER_COUNT = "1570"
 
-# Optional: set OBSERVER_ADMIN_SECRET in Cloudflare dashboard to allow
-# PUT /api/observers with Authorization: Bearer <secret> and {"count":N}
+# Optional: set OBSERVER_ADMIN_SECRET in Cloudflare dashboard to allow:
+#   PUT  /api/observers  {"count":1570}           — adjust public floor
+#   GET  /api/observers?number=13                 — lookup who holds #13
