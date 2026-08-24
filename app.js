@@ -212,10 +212,6 @@
     migrateLegacyKeys();
     await fetchPublicCount();
 
-    if (await lookupObserver()) {
-      return;
-    }
-
     const params = new URLSearchParams(window.location.search);
     const restoreParam = Number(params.get("restore"));
     if (Number.isFinite(restoreParam) && restoreParam > 0) {
@@ -224,6 +220,25 @@
     }
 
     const stored = getStoredNumber();
+    if (stored && stored <= baseline) {
+      const restored = await syncObserver({
+        silent: true,
+        reclaim: true,
+        legacy: stored,
+      });
+      if (restored) return;
+    }
+
+    if (await lookupObserver()) {
+      const assigned = getStoredNumber();
+      if (assigned && assigned > baseline) {
+        showReclaimPanel(
+          "This device was reassigned a new number. Enter your original Observer number to restore it."
+        );
+      }
+      return;
+    }
+
     if (stored) {
       const restored = await syncObserver({
         silent: true,
