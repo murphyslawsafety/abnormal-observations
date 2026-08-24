@@ -172,11 +172,21 @@
       }
 
       persistClaim(data);
+      if (reclaim && legacy && data.observerNumber !== legacy) {
+        setReclaimMessage(
+          "Could not restore Observer " + legacy + ". This device kept Observer " + data.observerNumber + ".",
+          true
+        );
+        return null;
+      }
       if (reclaim) {
         setReclaimMessage("Observer " + data.observerNumber + " restored.", false);
       }
       return data.observerNumber;
     } catch (error) {
+      if (reclaim) {
+        showReclaimPanel();
+      }
       if (!silent && !reclaim) {
         alert("Could not reach the observer counter. Please try again in a moment.");
       }
@@ -215,7 +225,25 @@
     const params = new URLSearchParams(window.location.search);
     const restoreParam = Number(params.get("restore"));
     if (Number.isFinite(restoreParam) && restoreParam > 0) {
-      await syncObserver({ silent: false, reclaim: true, legacy: restoreParam });
+      showReclaimPanel();
+      const restored = await syncObserver({
+        silent: false,
+        reclaim: true,
+        legacy: restoreParam,
+      });
+      if (restored === restoreParam) {
+        return;
+      }
+      if (result) result.classList.remove("show");
+      if (observerBadge) observerBadge.hidden = true;
+      setReclaimMessage(
+        "Observer " +
+          restoreParam +
+          " is already on another device. Open ?restore=" +
+          restoreParam +
+          " in that phone's browser, or enter your number below.",
+        true
+      );
       return;
     }
 

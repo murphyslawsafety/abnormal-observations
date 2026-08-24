@@ -106,6 +106,12 @@ export class ObserverCounter {
     return json({ released: n });
   }
 
+  async holderIsSquatter(holder, legacy) {
+    if (!holder) return false;
+    const assigned = await this.state.storage.get(visitorKey(holder));
+    return assigned !== legacy;
+  }
+
   async claimVisitor(visitorId, legacyObserverNumber, reclaim = false) {
     if (!visitorId || typeof visitorId !== "string" || visitorId.length < 8) {
       return json({ error: "A valid visitorId is required." }, 400);
@@ -126,11 +132,12 @@ export class ObserverCounter {
 
     if (Number.isFinite(legacy) && legacy >= 1 && (reclaim || legacy <= baseline)) {
       const holder = await this.state.storage.get(numberKey(legacy));
+      const squatter = holder ? await this.holderIsSquatter(holder, legacy) : false;
       const canTake =
         !holder ||
         holder === visitorId ||
         isReleasableHolder(holder) ||
-        (reclaim && legacy <= baseline && typeof existing === "number" && existing > baseline);
+        squatter;
 
       if (canTake) {
         if (holder && holder !== visitorId) {
@@ -146,8 +153,22 @@ export class ObserverCounter {
       }
 
       if (reclaim) {
-        return json({ error: "That Observer number is already claimed by someone else." }, 409);
+        return json(
+          {
+            error:
+              "Observer " +
+              legacy +
+              " is already registered on another device. Open ?restore=" +
+              legacy +
+              " on that device.",
+          },
+          409
+        );
       }
+    }
+
+    if (reclaim) {
+      return json({ error: "Could not restore that Observer number." }, 409);
     }
 
     if (typeof existing === "number") {
