@@ -43,10 +43,8 @@ tag = "v1"
 new_sqlite_classes = ["ObserverCounter"]
 
 [vars]
-# Restored baseline: Cloudflare unique visitors on abnormalobservations.com
-# before the shared counter worked. New visitors continue from here.
-STARTING_OBSERVER_COUNT = "1570"
-
-# Optional: set OBSERVER_ADMIN_SECRET in Cloudflare dashboard to allow:
-#   PUT  /api/observers  {"count":1570}           — adjust public floor
-#   GET  /api/observers?number=13                 — lookup who holds #13
+# Restored baseline from Cloudflare unique visitors before the shared counter worked:
+#   abnormalobservations.com  ~1.57k  (1570)
+#   abnormalobservations.org  ~1.17k  (1170)
+# Public total will not display below 2740. Personal numbers are unchanged.
+STARTING_OBSERVER_COUNT = "2740"

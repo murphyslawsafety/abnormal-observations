@@ -1,6 +1,6 @@
 window.AO_CONFIG = {
   // Display fallback before the API responds (matches wrangler.toml baseline).
-  startingObserverCount: 1570,
+  startingObserverCount: 2740,
 
   // Global counter endpoint (Worker route). Leave blank for local-only preview.
   counterApiUrl: "/api/observers",

@@ -14,7 +14,7 @@
 
 - **Current Observers** = total unique observers (public count).
 - **Your number** = permanent designation, tied to this browser via a private visitor id.
-- Baseline restored to **1,570** from Cloudflare unique visitors on `.com` before the counter worked.
+- Baseline restored to **2,740** (Cloudflare unique visitors: ~1,570 on `.com` + ~1,170 on `.org`).
 - New visitors receive **1571, 1572, …** and keep that number on return visits.
 
 ### Lucky-number promotions
