@@ -43,8 +43,9 @@ tag = "v1"
 new_sqlite_classes = ["ObserverCounter"]
 
 [vars]
-# Restored baseline from Cloudflare unique visitors before the shared counter worked:
-#   abnormalobservations.com  ~1.57k  (1570)
-#   abnormalobservations.org  ~1.17k  (1170)
-# Public total will not display below 2740. Personal numbers are unchanged.
-STARTING_OBSERVER_COUNT = "2740"
+# Restored baseline from Cloudflare unique visitors (both domains).
+# Aug 24, 2026: .com ~1,570 + .org ~1,170 = 2,740
+# Aug 29, 2026 catch-up (charts while counter under-counted returns):
+#   .com ~462 + .org ~280 ≈ 742 missed → 2,740 + 742 = 3,482
+# Public total will not display below 3482. Personal numbers are unchanged.
+STARTING_OBSERVER_COUNT = "3482"
