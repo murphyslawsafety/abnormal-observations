@@ -9,16 +9,17 @@
   const reclaimInput = document.querySelector("[data-reclaim-input]");
   const reclaimButton = document.querySelector("[data-reclaim-restore]");
   const reclaimMessage = document.querySelector("[data-reclaim-message]");
+  const restoreToggle = document.querySelector("[data-reclaim-toggle]");
 
   const counterApiUrl = cfg.counterApiUrl || "";
-  const baseline = Number(cfg.startingObserverCount || 1570);
+  const baseline = Number(cfg.startingObserverCount || 1);
   const VISITOR_KEY = "aoVisitorId";
   const NUMBER_KEY = "aoObserverNumber";
   const CLAIMED_KEY = "aoObserverClaimed";
-  const AUTO_CLAIM_DELAY_MS = 1800;
+  const HIT_KEY = "aoVisitHit";
 
   let claimInFlight = false;
-  let syncedThisSession = false;
+  let hasNumber = false;
 
   function migrateLegacyKeys() {
     if (localStorage.getItem("aoJoinedGlobally") === "1") {
@@ -50,6 +51,7 @@
 
   function renderPersonalNumber(number) {
     const formatted = Number(number).toLocaleString("en-US");
+    hasNumber = true;
     if (assignedNumber) assignedNumber.textContent = formatted;
     if (observerBadge) {
       observerBadge.textContent = "Observer " + formatted;
@@ -57,13 +59,6 @@
     }
     if (result) result.classList.add("show");
     if (joinButton) joinButton.textContent = "Continue";
-    if (reclaimPanel) reclaimPanel.hidden = true;
-  }
-
-  function showReclaimPanel(message) {
-    if (!reclaimPanel) return;
-    reclaimPanel.hidden = false;
-    if (reclaimMessage && message) reclaimMessage.textContent = message;
   }
 
   function setReclaimMessage(message, isError) {
@@ -72,10 +67,15 @@
     reclaimMessage.classList.toggle("is-error", Boolean(isError));
   }
 
+  function showReclaimPanel(message) {
+    if (!reclaimPanel) return;
+    reclaimPanel.hidden = false;
+    if (message) setReclaimMessage(message, false);
+  }
+
   function persistClaim(data) {
     localStorage.setItem(NUMBER_KEY, String(data.observerNumber));
     localStorage.setItem(CLAIMED_KEY, "1");
-    syncedThisSession = true;
     renderCount(data.count);
     renderPersonalNumber(data.observerNumber);
   }
@@ -99,41 +99,22 @@
     }
   }
 
-  async function lookupObserver() {
-    if (!counterApiUrl) return false;
-
-    try {
-      const response = await fetch(
-        counterApiUrl + "?visitorId=" + encodeURIComponent(getVisitorId()),
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        }
-      );
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (typeof data.observerNumber !== "number") return false;
-      persistClaim(data);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async function syncObserver(options) {
-    const silent = Boolean(options && options.silent);
+  /**
+   * Record one site view. Runs once per page load.
+   * Server increments the public total; first visit also assigns Observer #.
+   */
+  async function recordVisit(options) {
+    const silent = !options || options.silent !== false;
     const reclaim = Boolean(options && options.reclaim);
     const legacyOverride = options && options.legacy;
 
     if (!counterApiUrl) {
-      if (!silent) alert("Observer counter is not configured yet.");
+      if (!silent) alert("Visit counter is not configured yet.");
       return null;
     }
 
     if (claimInFlight) return getStoredNumber();
     claimInFlight = true;
-
     migrateLegacyKeys();
 
     const payload = {
@@ -141,7 +122,7 @@
       reclaim: reclaim,
     };
 
-    const legacy = legacyOverride || getStoredNumber();
+    const legacy = legacyOverride || (reclaim ? getStoredNumber() : null);
     if (legacy) payload.legacyObserverNumber = legacy;
 
     try {
@@ -158,6 +139,7 @@
       const data = await response.json();
 
       if (!response.ok) {
+        if (typeof data.count === "number") renderCount(data.count);
         if (response.status === 409 && reclaim) {
           setReclaimMessage(
             "Observer " + legacy + " is already claimed on another device.",
@@ -167,28 +149,36 @@
         throw new Error(data.error || "Counter request failed");
       }
 
+      if (typeof data.count === "number") renderCount(data.count);
+
       if (typeof data.observerNumber !== "number") {
         throw new Error("Counter response invalid");
       }
 
       persistClaim(data);
+
       if (reclaim && legacy && data.observerNumber !== legacy) {
         setReclaimMessage(
-          "Could not restore Observer " + legacy + ". This device kept Observer " + data.observerNumber + ".",
+          "Could not restore Observer " +
+            legacy +
+            ". This device kept Observer " +
+            data.observerNumber +
+            ".",
           true
         );
         return null;
       }
       if (reclaim) {
-        setReclaimMessage("Observer " + data.observerNumber + " restored.", false);
+        setReclaimMessage(
+          "Observer " + data.observerNumber + " restored.",
+          false
+        );
+        if (reclaimPanel) reclaimPanel.hidden = true;
       }
       return data.observerNumber;
     } catch (error) {
-      if (reclaim) {
-        showReclaimPanel();
-      }
       if (!silent && !reclaim) {
-        alert("Could not reach the observer counter. Please try again in a moment.");
+        alert("Could not reach the visit counter. Please try again in a moment.");
       }
       return null;
     } finally {
@@ -196,44 +186,21 @@
     }
   }
 
-  function scheduleAutoClaim() {
-    if (!counterApiUrl || syncedThisSession) return;
-
-    let done = false;
-
-    function attempt() {
-      if (done || syncedThisSession) return;
-      if (document.visibilityState !== "visible") return;
-      done = true;
-      syncObserver({ silent: true }).catch(function () {
-        done = false;
-      });
-    }
-
-    setTimeout(attempt, AUTO_CLAIM_DELAY_MS);
-    document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "visible") {
-        setTimeout(attempt, 300);
-      }
-    });
-  }
-
   async function initObserver() {
     migrateLegacyKeys();
+    renderCount(getStoredNumber() || baseline);
     await fetchPublicCount();
 
     const params = new URLSearchParams(window.location.search);
     const restoreParam = Number(params.get("restore"));
     if (Number.isFinite(restoreParam) && restoreParam > 0) {
       showReclaimPanel();
-      const restored = await syncObserver({
+      const restored = await recordVisit({
         silent: false,
         reclaim: true,
         legacy: restoreParam,
       });
-      if (restored === restoreParam) {
-        return;
-      }
+      if (restored === restoreParam) return;
       if (result) result.classList.remove("show");
       if (observerBadge) observerBadge.hidden = true;
       setReclaimMessage(
@@ -247,54 +214,28 @@
       return;
     }
 
+    // One hit per page load — classic traffic counter.
+    // Skip duplicate only if this exact document already recorded (bfcache/reload guards).
+    if (!window[HIT_KEY]) {
+      window[HIT_KEY] = true;
+      await recordVisit({ silent: true });
+    }
+
     const stored = getStoredNumber();
-    if (stored && stored <= baseline) {
-      const restored = await syncObserver({
-        silent: true,
-        reclaim: true,
-        legacy: stored,
-      });
-      if (restored) return;
-    }
-
-    if (await lookupObserver()) {
-      const assigned = getStoredNumber();
-      if (assigned && assigned > baseline) {
-        showReclaimPanel(
-          "This device was reassigned a new number. Enter your original Observer number to restore it."
-        );
-      }
-      return;
-    }
-
-    if (stored) {
-      const restored = await syncObserver({
-        silent: true,
-        reclaim: true,
-        legacy: stored,
-      });
-      if (restored) return;
-
-      if (stored > baseline) {
-        showReclaimPanel(
-          "Your browser was reassigned a new number. Enter your original Observer number to restore it."
-        );
-        return;
-      }
-    }
-
-    showReclaimPanel("Already an Observer? Enter your number to restore it on this device.");
-    scheduleAutoClaim();
+    if (stored) renderPersonalNumber(stored);
   }
 
   renderCount(baseline);
   initObserver();
 
   if (countEl && counterApiUrl) {
-    setInterval(fetchPublicCount, 20000);
-    window.addEventListener("focus", function () {
-      fetchPublicCount();
-      lookupObserver();
+    setInterval(fetchPublicCount, 30000);
+    window.addEventListener("focus", fetchPublicCount);
+  }
+
+  if (restoreToggle && reclaimPanel) {
+    restoreToggle.addEventListener("click", function () {
+      reclaimPanel.hidden = !reclaimPanel.hidden;
     });
   }
 
@@ -308,7 +249,7 @@
 
       reclaimButton.disabled = true;
       reclaimButton.textContent = "Restoring…";
-      await syncObserver({ silent: false, reclaim: true, legacy: legacy });
+      await recordVisit({ silent: false, reclaim: true, legacy: legacy });
       reclaimButton.textContent = "Restore my number";
       reclaimButton.disabled = false;
     });
@@ -316,19 +257,23 @@
 
   if (joinButton) {
     joinButton.addEventListener("click", async function () {
-      if (syncedThisSession && getStoredNumber()) {
+      if (hasNumber || getStoredNumber()) {
         window.location.href = "begin.html";
         return;
       }
 
       joinButton.disabled = true;
       const previousLabel = joinButton.textContent;
-      joinButton.textContent = "Claiming…";
+      joinButton.textContent = "Joining…";
 
-      await syncObserver({ silent: false, reclaim: false });
+      await recordVisit({ silent: false });
 
       joinButton.textContent = getStoredNumber() ? "Continue" : previousLabel;
       joinButton.disabled = false;
+
+      if (getStoredNumber()) {
+        window.location.href = "begin.html";
+      }
     });
   }
 

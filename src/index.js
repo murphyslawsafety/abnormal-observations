@@ -31,7 +31,7 @@ function isReleasableHolder(holder) {
   return typeof holder === "string" && holder.startsWith("test-restore-");
 }
 
-/** Shared global observer registry (one Durable Object for the whole site). */
+/** Shared global visit counter + personal Observer numbers. */
 export class ObserverCounter {
   constructor(state, env) {
     this.state = state;
@@ -50,11 +50,15 @@ export class ObserverCounter {
     return stored;
   }
 
+  async bumpVisits() {
+    const next = (await this.getCount()) + 1;
+    await this.state.storage.put("count", next);
+    return next;
+  }
+
   async bindNumber(visitorId, observerNumber, options = {}) {
     const count = await this.getCount();
-    const finalCount = Math.max(count, observerNumber);
 
-    await this.state.storage.put("count", finalCount);
     await this.state.storage.put(visitorKey(visitorId), observerNumber);
     await this.state.storage.put(numberKey(observerNumber), visitorId);
 
@@ -67,7 +71,7 @@ export class ObserverCounter {
     }
 
     return json({
-      count: finalCount,
+      count,
       observerNumber,
       returning: Boolean(options.returning),
       restored: Boolean(options.restored),
@@ -112,25 +116,22 @@ export class ObserverCounter {
     return assigned !== legacy;
   }
 
+  /**
+   * Record a site visit.
+   * - Public `count` always goes up by 1 (total views).
+   * - First-time visitors get a personal Observer number = that visit number.
+   * - Returning visitors keep their original number.
+   */
   async claimVisitor(visitorId, legacyObserverNumber, reclaim = false) {
     if (!visitorId || typeof visitorId !== "string" || visitorId.length < 8) {
       return json({ error: "A valid visitorId is required." }, 400);
     }
 
-    const baseline = startingCount(this.env);
+    const count = await this.bumpVisits();
     const existing = await this.state.storage.get(visitorKey(visitorId));
     const legacy = Math.floor(Number(legacyObserverNumber));
 
-    if (typeof existing === "number" && !reclaim) {
-      const count = await this.getCount();
-      return json({
-        count,
-        observerNumber: existing,
-        returning: true,
-      });
-    }
-
-    if (Number.isFinite(legacy) && legacy >= 1 && (reclaim || legacy <= baseline)) {
+    if (reclaim && Number.isFinite(legacy) && legacy >= 1) {
       const holder = await this.state.storage.get(numberKey(legacy));
       const squatter = holder ? await this.holderIsSquatter(holder, legacy) : false;
       const canTake =
@@ -152,27 +153,21 @@ export class ObserverCounter {
         });
       }
 
-      if (reclaim) {
-        return json(
-          {
-            error:
-              "Observer " +
-              legacy +
-              " is already registered on another device. Open ?restore=" +
-              legacy +
-              " on that device.",
-          },
-          409
-        );
-      }
-    }
-
-    if (reclaim) {
-      return json({ error: "Could not restore that Observer number." }, 409);
+      return json(
+        {
+          error:
+            "Observer " +
+            legacy +
+            " is already registered on another device. Open ?restore=" +
+            legacy +
+            " on that device.",
+          count,
+        },
+        409
+      );
     }
 
     if (typeof existing === "number") {
-      const count = await this.getCount();
       return json({
         count,
         observerNumber: existing,
@@ -180,9 +175,8 @@ export class ObserverCounter {
       });
     }
 
-    const count = await this.getCount();
-    const observerNumber = count + 1;
-    return this.bindNumber(visitorId, observerNumber, { returning: false });
+    // First arrival: your designation is this visit's number.
+    return this.bindNumber(visitorId, count, { returning: false });
   }
 
   async lookupNumber(observerNumber) {
