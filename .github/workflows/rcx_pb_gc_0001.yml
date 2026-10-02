@@ -1,4 +1,4 @@
-name: RCX-PB-GC-0001 Qualification v0.3
+name: RCX-PB-GC-0001 Qualification v0.3 isolated
 on:
   push:
     branches: ['lab/rcx-pb-gc-0001']
