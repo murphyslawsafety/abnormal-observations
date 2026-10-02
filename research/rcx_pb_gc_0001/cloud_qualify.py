@@ -140,3 +140,12 @@ summary={"experiment":EXP,"source_url":URL,"source_sha256":pdf_sha,"extracted_te
 (OUT/"BLOCKING_ANOMALIES.json").write_text(json.dumps(blocking,indent=2,sort_keys=True)+"\n")
 (OUT/"SOURCE_HASHES.txt").write_text(f"{pdf_sha}  powerball-pre-test.pdf\n{text_sha}  powerball-pre-test-layout.txt\n{sha(truth_bytes)}  SEALED_TRUTH.json\n")
 print(json.dumps(summary,indent=2,sort_keys=True))
+print("=== BLOCKING ANOMALY BREAKDOWN ===")
+from collections import Counter as _C
+print(json.dumps(dict(sorted(_C(a.get("kind","UNKNOWN") for a in blocking).items())),indent=2,sort_keys=True))
+print("=== BLOCKING ANOMALIES ===")
+print(json.dumps(blocking,indent=2,sort_keys=True))
+print("=== NONBLOCKING ANOMALY BREAKDOWN ===")
+nonblocking=[a for a in anoms if not a.get("blocking",False)]
+print(json.dumps(dict(sorted(_C(a.get("kind","UNKNOWN") for a in nonblocking).items())),indent=2,sort_keys=True))
+
