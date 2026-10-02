@@ -11,7 +11,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 ART = Path("artifact")
-MANIFEST_PATH = Path("research/rcx_pb_gc_0001/SEARCH_MANIFEST_v0.1.json")
+MANIFEST_PATH = Path("research/rcx_pb_gc_0001/SEARCH_MANIFEST_v0.1.1.json")
 manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 def load_csv(path):
@@ -36,7 +36,7 @@ actual_runner_blob = subprocess.check_output(
     ["git", "hash-object", "research/rcx_pb_gc_0001/validate_global_parity.py"],
     text=True,
 ).strip()
-if actual_runner_blob != manifest["validation_runner_git_blob_sha"]:
+if actual_runner_blob != manifest["frozen_git_blobs"]["validation_runner"]:
     raise SystemExit(f"validation runner blob mismatch: {actual_runner_blob}")
 
 ctx = defaultdict(list)
