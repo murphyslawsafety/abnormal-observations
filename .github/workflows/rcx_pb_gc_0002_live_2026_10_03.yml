@@ -1,0 +1,33 @@
+name: RCX-PB-GC-0002 Live Probe 2026-10-03
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0002']
+    paths:
+      - '.github/workflows/rcx_pb_gc_0002_live_2026_10_03.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen artifacts
+        run: |
+          test "$(git hash-object research/rcx_pb_gc_0002/RCX_PB_GC_0002_PREREGISTRATION_v1.0.md)" = "c8c13697af1db879c6a2357a25cc56ea115afe2c"
+          test "$(git hash-object research/rcx_pb_gc_0002/RCX_PB_GC_0002_FITTED_MODEL_v1.0.json)" = "15eae387f3cb632edf6256604678c70e3e7943b6"
+          test "$(git hash-object research/rcx_pb_gc_0002/live_score.py)" = "cf920a30d8aa809b9794ad252ec45443945f3926"
+          test "$(git hash-object research/rcx_pb_gc_0002/RCX_PB_GC_0002_FREEZE_MANIFEST_v1.0.json)" = "ae0260e8e4c055dac3e138240d8ef2776813255c"
+          echo "7831729fc8ba4fc385e8956961572f1e5ca8fc289c57ded77ef49fe49b441b87  research/rcx_pb_gc_0002/RCX_PB_GC_0002_FITTED_MODEL_v1.0.json" | sha256sum -c -
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Probe official source and score only if draw is present
+        run: python research/rcx_pb_gc_0002/live_score.py --target-date 2026-10-03
+      - name: Upload immutable probe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0002-2026-10-03-probe
+          path: artifact/RCX_PB_GC_0002_2026-10-03_LIVE.json
+          if-no-files-found: error
+          retention-days: 90
