@@ -1,0 +1,32 @@
+name: RCX-PB-GC-0001 DEV Causal-State Scan
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0001']
+    paths:
+      - 'research/rcx_pb_gc_0001/dev_causal_state_scan.py'
+      - '.github/workflows/rcx_pb_gc_0001_dev_scan.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dev-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Reproduce frozen v0.4 qualified corpus
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Run DEV-only causal-state scan
+        run: python research/rcx_pb_gc_0001/dev_causal_state_scan.py
+      - name: Upload safe DEV discovery artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0001-dev-causal-state
+          path: |
+            artifact/QUALIFICATION_SUMMARY.json
+            artifact/DEV_CAUSAL_STATE_SCAN_v0.1.json
+            artifact/DEV_CAUSAL_STATE_CANDIDATES_v0.1.csv
+          if-no-files-found: error
+          retention-days: 30
