@@ -1,0 +1,37 @@
+{
+  "experiment": "RCX-PB-GC-0001",
+  "branch": "sparse_GF2_global_parity",
+  "status": "VALIDATION_FAIL",
+  "scientific_classification": "LEGITIMATE_NEGATIVE",
+  "eureka_status": "NONE",
+  "validation_workflow_run_id": 37012856939,
+  "validation_artifact_id": 11228053545,
+  "validation_artifact_digest": "sha256:8c2678c087702d674079acb3e970cc0db3b740bcd2f2f484ee03356b3529166a",
+  "frozen_search_manifest_id": "RCX-PB-GC-0001_SEARCH_MANIFEST_v0.1.1",
+  "frozen_search_manifest_git_blob_sha": "948d949a5c820fad0f150faf539b15f81576cdd2",
+  "sealed_truth_accessed": false,
+  "validation_target_dates": 261,
+  "mdl_penalty_nats_per_date": 0.021320001560623348,
+  "candidates": [
+    {
+      "model_id": "GF2_W524362_P9",
+      "validation_global_raw_nats_per_date": -0.0040281595747750495,
+      "validation_forward_raw_same_beta_nats_per_date": -0.005748281078964132,
+      "validation_global_score_minus_mdl": -0.0253481611353984,
+      "validation_advance": false
+    },
+    {
+      "model_id": "GF2_W524392_P9",
+      "validation_global_raw_nats_per_date": -0.004610401683112213,
+      "validation_forward_raw_same_beta_nats_per_date": -0.0012499956496080434,
+      "validation_global_score_minus_mdl": -0.02593040324373556,
+      "validation_advance": false
+    }
+  ],
+  "interpretation": [
+    "The marginal DEV parity/global-closure signal did not transfer to the frozen validation split.",
+    "Both frozen candidates underperformed the fair baseline in both global and forward validation modes before MDL.",
+    "The parity branch stops here; matched-null and sealed-test execution are not authorized for this branch because the validation gate failed.",
+    "This result does not falsify the full RCX-PB-GC-0001 architecture; it falsifies this searched sparse GF(2) parity grammar family/configuration."
+  ]
+}
