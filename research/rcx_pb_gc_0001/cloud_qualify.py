@@ -517,6 +517,7 @@ def export_csv(path, predicate, mask_sealed_draw=False):
 
 export_csv("DEVELOPMENT.csv", lambda r: r["split"] == "development")
 export_csv("VALIDATION.csv", lambda r: r["split"] == "validation")
+export_csv("CONTEXT_PRETESTS_ALL.csv", lambda r: r["type_class"] == "Pre-test")
 export_csv("SEALED_WORKING_VIEW.csv", lambda r: r["split"] == "sealed_test", True)
 export_csv("PRIMARY_WORKING_VIEW.csv", lambda r: True, True)
 
