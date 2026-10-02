@@ -1,0 +1,35 @@
+name: RCX-PB-GC-0001 DEV GF2 Parity Scan
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0001']
+    paths:
+      - 'research/rcx_pb_gc_0001/dev_parity_scan.py'
+      - '.github/workflows/rcx_pb_gc_0001_dev_parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dev-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --quiet numpy
+      - name: Reproduce frozen v0.4 qualified corpus
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Run DEV-only sparse GF2 parity scan
+        run: python research/rcx_pb_gc_0001/dev_parity_scan.py
+      - name: Upload safe DEV parity artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0001-dev-parity
+          path: |
+            artifact/QUALIFICATION_SUMMARY.json
+            artifact/DEV_PARITY_SCAN_v0.1.json
+            artifact/DEV_PARITY_SHORTLIST_v0.1.csv
+          if-no-files-found: error
+          retention-days: 30
