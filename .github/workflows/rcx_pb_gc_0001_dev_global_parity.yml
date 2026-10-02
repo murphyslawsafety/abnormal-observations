@@ -1,0 +1,37 @@
+name: RCX-PB-GC-0001 DEV Global Parity Compile
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0001']
+    paths:
+      - 'research/rcx_pb_gc_0001/dev_global_parity_compile.py'
+      - '.github/workflows/rcx_pb_gc_0001_dev_global_parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --quiet numpy
+      - name: Reproduce frozen v0.4 qualified corpus
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Reproduce DEV parity discovery
+        run: python research/rcx_pb_gc_0001/dev_parity_scan.py
+      - name: Compile bidirectional grammar and forward transfer on DEV
+        run: python research/rcx_pb_gc_0001/dev_global_parity_compile.py
+      - name: Upload safe compiled DEV artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0001-dev-global-parity
+          path: |
+            artifact/QUALIFICATION_SUMMARY.json
+            artifact/DEV_PARITY_SCAN_v0.1.json
+            artifact/DEV_GLOBAL_PARITY_COMPILE_v0.1.json
+          if-no-files-found: error
+          retention-days: 30
