@@ -1,0 +1,125 @@
+{
+  "manifest_id": "RCX-PB-GC-0001_SEARCH_MANIFEST_v0.1.1",
+  "frozen_at_utc": "2026-10-02",
+  "experiment": "RCX-PB-GC-0001",
+  "status": "FROZEN_BEFORE_VALIDATION_BOOKKEEPING_REPAIR",
+  "controlling_preregistration": "RCX_PB_GLOBAL_CLOSURE_PREREG_v0.1.md",
+  "execution_amendments": [
+    "v0.3",
+    "v0.4"
+  ],
+  "source_sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+  "source_unavailable_dates": [
+    "2025-03-01"
+  ],
+  "development_target_dates": 878,
+  "validation_target_dates_expected": 261,
+  "sealed_observable_target_dates": 273,
+  "causal_state_branch": {
+    "status": "PRUNED_ON_DEV",
+    "reason": "All 24 preregistered finite-state table candidates had negative chronological DEV cross-validated log-score improvement versus the fair baseline before MDL penalty.",
+    "best_model_id": "CS_COUNT_A16",
+    "best_dev_cv_raw_nats_per_date": -0.024517857848688804
+  },
+  "gf2_representation": {
+    "white": "20 event-incidence bits = 4 ordered pretests x 5 ordered white extraction positions; bit index = pretest_index*5 + position_index, both zero-based",
+    "powerball": "4 event-incidence bits = one Powerball occurrence bit per ordered pretest",
+    "printed_label_arithmetic_used": false,
+    "provenance": "binary coordinates arise from source event incidence, not numerical properties of printed labels"
+  },
+  "dev_search_pipeline": {
+    "stage_a": "Search all white masks of Hamming weight 1..4 (6195 masks) and all 15 nonzero PB masks using development outcomes only; position-specific two-state hazard screen with alpha=4.",
+    "stage_b": "Keep top 32 white masks and all 15 PB masks, then refit one shared conditional-logit beta per game and chronological expanding-window DEV cross-validate.",
+    "stage_c": "Take top 10 white and top 5 PB shared-beta primitives, compile global grammar using the same parity operator on current, previous, and next pretest blocks when ball-set identity matches. Missing scheduled physical blocks break adjacency.",
+    "forward_transfer": "Fit beta on the global DEV grammar only. Forward mode removes the future (+1) term and uses the same beta without refitting.",
+    "dev_advance_rule": "global score-minus-MDL > 0; forward raw improvement > 0; all three DEV chronological CV folds positive in both global and forward modes",
+    "full_pipeline_null_requirement": "Any later matched-null execution must repeat this entire DEV search, pruning, compilation, and validation-selection pipeline; it may not test only the two observed masks."
+  },
+  "mdl_scalar_parameter_count_k": 2,
+  "validation_selection_rule": "Fit beta_white and beta_pb once on all 878 DEV dates under the frozen global grammar. Score each frozen candidate on all 261 validation dates in global and forward modes with no refit. Candidate advances only when validation global mean log-score improvement minus 0.5*k*ln(Nval)/Nval is >0 AND validation forward raw mean log-score improvement is >0. If multiple advance, select highest validation global score-minus-MDL, then highest forward raw improvement, then lexical model_id.",
+  "validation_candidates": [
+    {
+      "model_id": "GF2_W524392_P9",
+      "white_mask": 524392,
+      "white_bits": [
+        3,
+        5,
+        6,
+        19
+      ],
+      "pb_mask": 9,
+      "pb_bits": [
+        0,
+        3
+      ],
+      "dev_global_cv_raw_nats_per_date": 0.00775270013205839,
+      "dev_global_score_minus_mdl": 0.0000332848773486891,
+      "dev_forward_cv_raw_same_beta_nats_per_date": 0.005745943180556289,
+      "dev_global_cv_folds": [
+        0.006079848370321125,
+        0.009641630507317596,
+        0.007536621518536449
+      ],
+      "dev_forward_cv_folds_same_beta": [
+        0.001684594261716708,
+        0.005061241675763401,
+        0.010491993604188756
+      ]
+    },
+    {
+      "model_id": "GF2_W524362_P9",
+      "white_mask": 524362,
+      "white_bits": [
+        1,
+        3,
+        6,
+        19
+      ],
+      "pb_mask": 9,
+      "pb_bits": [
+        0,
+        3
+      ],
+      "dev_global_cv_raw_nats_per_date": 0.007741611662014573,
+      "dev_global_score_minus_mdl": 0.00002219640730487249,
+      "dev_forward_cv_raw_same_beta_nats_per_date": 0.005152865992223207,
+      "dev_global_cv_folds": [
+        0.0080014173752475,
+        0.010723767353151859,
+        0.004499650257644359
+      ],
+      "dev_forward_cv_folds_same_beta": [
+        0.004125998241617527,
+        0.005603006321811233,
+        0.005729593413240861
+      ]
+    }
+  ],
+  "frozen_git_blobs": {
+    "qualifier": "be9048db45893dcbb78f763aaf99da9c201b0244",
+    "dev_parity_search": "e2bf2e58f5e07e0459aa081416fbc1c9c95f2002",
+    "dev_global_compile": "6946de5dd05dfa3e7d42e865a446ff91ae903a7c",
+    "validation_runner": "baa91328afcdbedc7f7f3113cabd358c0a1aaa9f",
+    "execution_amendment_v0_4": "09fca9a55e385a4f408c446474175aefca7d386e",
+    "source_manifest_v0_4": "78aed8d32f78f0cca958c24db7a8cb474f672158"
+  },
+  "sealed_truth_accessed_for_search_or_selection": false,
+  "eureka_status": "NONE",
+  "predecessor_manifest": {
+    "path": "research/rcx_pb_gc_0001/SEARCH_MANIFEST_v0.1.json",
+    "git_blob_sha": "509d0557beb6a46f5dec09d939e2091bbd424b74"
+  },
+  "bookkeeping_amendment": {
+    "reason": "First validation execution stopped before scoring with KeyError because the runner referenced manifest['validation_runner_git_blob_sha'] while v0.1 stored that value at manifest['frozen_git_blobs']['validation_runner'].",
+    "scientific_semantics_changed": false,
+    "validation_outcomes_accessed_before_repair": false,
+    "sealed_truth_accessed": false,
+    "code_changes": [
+      "Manifest filename changed from SEARCH_MANIFEST_v0.1.json to SEARCH_MANIFEST_v0.1.1.json.",
+      "Validation-runner self-hash lookup changed only from manifest['validation_runner_git_blob_sha'] to manifest['frozen_git_blobs']['validation_runner']."
+    ],
+    "old_validation_runner_git_blob_sha": "b65e8f883684e571ba06f43c1d57daffbc852c2d",
+    "repaired_validation_runner_git_blob_sha": "baa91328afcdbedc7f7f3113cabd358c0a1aaa9f",
+    "failed_pre_scoring_workflow_run_id": 37012493498
+  }
+}
