@@ -15,8 +15,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify frozen search manifest
         run: |
-          test "$(git hash-object research/rcx_pb_gc_0001/SEARCH_MANIFEST_v0.1.json)" = "509d0557beb6a46f5dec09d939e2091bbd424b74"
-          test "$(git hash-object research/rcx_pb_gc_0001/validate_global_parity.py)" = "b65e8f883684e571ba06f43c1d57daffbc852c2d"
+          test "$(git hash-object research/rcx_pb_gc_0001/SEARCH_MANIFEST_v0.1.1.json)" = "948d949a5c820fad0f150faf539b15f81576cdd2"
+          test "$(git hash-object research/rcx_pb_gc_0001/validate_global_parity.py)" = "baa91328afcdbedc7f7f3113cabd358c0a1aaa9f"
       - name: Install PDF text extractor
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Reproduce frozen v0.4 qualified corpus
