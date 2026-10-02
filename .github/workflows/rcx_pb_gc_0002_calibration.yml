@@ -1,0 +1,29 @@
+name: RCX-PB-GC-0002 Source Interface Calibration
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0002']
+    paths:
+      - 'research/rcx_pb_gc_0002/live_score.py'
+      - '.github/workflows/rcx_pb_gc_0002_calibration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Verify frozen model hash
+        run: echo "7831729fc8ba4fc385e8956961572f1e5ca8fc289c57ded77ef49fe49b441b87  research/rcx_pb_gc_0002/RCX_PB_GC_0002_FITTED_MODEL_v1.0.json" | sha256sum -c -
+      - name: Parse 2026-09-30 as source-interface calibration only
+        run: python research/rcx_pb_gc_0002/live_score.py --target-date 2026-09-30 --calibration
+      - name: Upload calibration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0002-source-calibration
+          path: artifact/RCX_PB_GC_0002_2026-09-30_CALIBRATION.json
+          if-no-files-found: error
+          retention-days: 90
