@@ -1,0 +1,68 @@
+{
+  "experiment": "RCX-PB-GC-0002",
+  "manifest_version": "1.0",
+  "frozen_at_utc": "2026-10-02T18:00:00Z",
+  "status": "FULLY_FROZEN_BEFORE_LIVE_ERA",
+  "first_eligible_live_draw": "2026-10-03",
+  "historical_cutoff": "2026-09-28",
+  "prior_experiment": "RCX-PB-GC-0001",
+  "prior_sealed_outcomes_used": false,
+  "authorized_training_targets": {
+    "development": 878,
+    "validation": 261,
+    "total": 1139
+  },
+  "source": {
+    "url": "https://cdn.powerball.com/v01/media/powerball-pre-test.pdf",
+    "training_snapshot_sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+    "source_interface_calibration_date": "2026-09-30",
+    "source_interface_calibration_status": "CALIBRATION_PARSE_PASS",
+    "calibration_pretest_count": 4,
+    "calibration_draw_count": 1,
+    "calibration_run_id": 37044240130,
+    "calibration_artifact_id": 11243607010,
+    "calibration_artifact_digest": "sha256:175efd92a19c71e998066bee655acecb15964b17d340821b146671b85a6257c4"
+  },
+  "frozen_git_blobs": {
+    "preregistration": "c8c13697af1db879c6a2357a25cc56ea115afe2c",
+    "fit_code": "9cc0c335ff9b84151ce734c4089afe99cb949e5b",
+    "fitted_model_git_blob": "15eae387f3cb632edf6256604678c70e3e7943b6",
+    "live_scorer": "cf920a30d8aa809b9794ad252ec45443945f3926"
+  },
+  "fitted_model": {
+    "sha256": "7831729fc8ba4fc385e8956961572f1e5ca8fc289c57ded77ef49fe49b441b87",
+    "training_run_id": 37043809779,
+    "training_artifact_id": 11243431422,
+    "training_artifact_digest": "sha256:e911fa5c3372ae40575d8a47187b59aba80abf9447e2ec4373ed25ca86d0be48",
+    "lambda_l2": 10,
+    "feature_order_white": [
+      "UNION",
+      "SAME_POS",
+      "PREFIX_COOCCUR",
+      "ADJ_FWD",
+      "ADJ_REV"
+    ],
+    "feature_order_powerball": [
+      "PB_OCCUR"
+    ],
+    "coefficients": {
+      "white": [
+        0.036658719381303634,
+        -0.2682660520633799,
+        -0.0014716493326463003,
+        -0.011346583343222588,
+        -0.0761784442374437
+      ],
+      "powerball": [
+        0.07030726814782846
+      ]
+    }
+  },
+  "primary_live_horizon_usable_draws": 30,
+  "primary_statistic": "cumulative conditional likelihood ratio / e-value versus ordered fair without-replacement white baseline times uniform 1/26 Powerball",
+  "block_a_signal_threshold": "E_30 >= 100 plus three positive 10-draw subblocks and no single draw >50% of positive total LLR",
+  "block_a_fail_threshold": "E_30 < 1 or integrity violation",
+  "block_a_other": "INCONCLUSIVE",
+  "eureka_boundary": "Block A alone cannot create an EUREKA; second unchanged prospective 30-draw Block B required with each block E>=100 and combined E>=10000 plus prior-art review.",
+  "eureka_status": "NONE"
+}
