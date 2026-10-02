@@ -1,0 +1,35 @@
+name: RCX-PB-GC-0001 DEV Moment Low-Rank Scan
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0001']
+    paths:
+      - 'research/rcx_pb_gc_0001/dev_moment_lowrank_scan.py'
+      - '.github/workflows/rcx_pb_gc_0001_dev_moment_lowrank.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --quiet numpy
+      - name: Reproduce frozen v0.4 qualified corpus
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Run frozen v0.5 DEV moment/low-rank search
+        run: python research/rcx_pb_gc_0001/dev_moment_lowrank_scan.py
+      - name: Upload safe DEV moment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0001-dev-moment-lowrank
+          path: |
+            artifact/QUALIFICATION_SUMMARY.json
+            artifact/DEV_MOMENT_LOWRANK_SCAN_v0.1.json
+            artifact/DEV_MOMENT_LOWRANK_SHORTLIST_v0.1.csv
+          if-no-files-found: error
+          retention-days: 30
