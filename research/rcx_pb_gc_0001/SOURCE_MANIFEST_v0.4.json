@@ -1,0 +1,18 @@
+{
+  "experiment": "RCX-PB-GC-0001",
+  "execution_amendment": "v0.4",
+  "source_url": "https://cdn.powerball.com/v01/media/powerball-pre-test.pdf",
+  "source_sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+  "matrix": "5/69 + 1/26",
+  "frozen_start": "2015-10-07",
+  "frozen_cutoff": "2026-09-28",
+  "source_unavailable_mask": [
+    "2025-03-01"
+  ],
+  "source_unavailable_policy": "exclude symmetrically from real and matched-null scoring; no imputation; sequential state restarts after gap",
+  "parser_git_blob_sha": "2d5c4ce9d1395aad33b2b7483370919f93c30412",
+  "parser_commit_sha": "73b4ec144ac9dff59d09487887c6d1616ccc3557",
+  "split_rule": "SHA256('RCX-PB-GC-0001|'+YYYY-MM-DD), first byte mod 10: 0-5 development, 6-7 validation, 8-9 sealed_test",
+  "scientific_scoring_started": false,
+  "sealed_truth_opened_for_model_selection": false
+}
