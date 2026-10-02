@@ -1,0 +1,64 @@
+{
+  "block_a_usable_draws": 30,
+  "coefficients": {
+    "powerball": [
+      0.07030726814782846
+    ],
+    "white": [
+      0.036658719381303634,
+      -0.2682660520633799,
+      -0.0014716493326463003,
+      -0.011346583343222588,
+      -0.0761784442374437
+    ]
+  },
+  "eureka_status": "NONE",
+  "experiment": "RCX-PB-GC-0002",
+  "feature_order_powerball": [
+    "PB_OCCUR"
+  ],
+  "feature_order_white": [
+    "UNION",
+    "SAME_POS",
+    "PREFIX_COOCCUR",
+    "ADJ_FWD",
+    "ADJ_REV"
+  ],
+  "fit_status": "FROZEN_CANDIDATE_MODEL",
+  "historical_cutoff": "2026-09-28",
+  "historical_estimation_policy": "RCX-PB-GC-0001 development + validation only; prior sealed_test excluded",
+  "lambda_l2": 10.0,
+  "model_version": "1.0",
+  "optimizer": {
+    "coefficient_clip": [
+      -8.0,
+      8.0
+    ],
+    "convergence_tolerance_max_abs_step": 1e-10,
+    "damp_step_if_max_abs_exceeds": 1.0,
+    "max_iterations": 100,
+    "name": "deterministic penalized Newton/IRLS",
+    "pb_final_max_abs_step": 2.344560609395498e-16,
+    "pb_iterations": 4,
+    "white_final_max_abs_step": 1.6830202600614552e-14,
+    "white_iterations": 4,
+    "zero_initialization": true
+  },
+  "preregistration": "RCX_PB_GC_0002_PREREGISTRATION_v1.0.md",
+  "prospective_start": "2026-10-03",
+  "sealed_rcx_pb_gc_0001_outcomes_used": false,
+  "source_sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+  "source_unavailable_dates": [
+    "2025-03-01"
+  ],
+  "training_diagnostic_only_not_evidence": {
+    "pb_mean_logscore_improvement_nats_per_draw": 6.627495919766964e-05,
+    "total_mean_logscore_improvement_nats_per_draw": 0.00152086742024076,
+    "white_mean_logscore_improvement_nats_per_draw": 0.001454592461044288
+  },
+  "training_split_counts": {
+    "development": 878,
+    "validation": 261
+  },
+  "training_target_count": 1139
+}
