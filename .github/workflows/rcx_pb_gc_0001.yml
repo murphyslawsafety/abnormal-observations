@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Install PDF text extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Run frozen corpus qualification
         run: python research/rcx_pb_gc_0001/cloud_qualify.py
       - name: Upload safe qualification artifact
