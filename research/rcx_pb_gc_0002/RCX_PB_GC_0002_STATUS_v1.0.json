@@ -1,0 +1,33 @@
+{
+  "experiment": "RCX-PB-GC-0002",
+  "status": "FROZEN_AND_ARMED",
+  "frozen_before_first_live_draw": true,
+  "freeze_manifest": "RCX_PB_GC_0002_FREEZE_MANIFEST_v1.0.json",
+  "freeze_manifest_commit": "3271528369243cccdcdd5958f2aca56fe2296a1f",
+  "model_sha256": "7831729fc8ba4fc385e8956961572f1e5ca8fc289c57ded77ef49fe49b441b87",
+  "scorer_git_blob_sha": "cf920a30d8aa809b9794ad252ec45443945f3926",
+  "source_interface_calibration": {
+    "date": "2026-09-30",
+    "status": "CALIBRATION_PARSE_PASS",
+    "pretests": 4,
+    "draw_rows": 1,
+    "outcome_not_scored_in_calibration": true
+  },
+  "first_live_date": "2026-10-03",
+  "first_live_probe": {
+    "run_id": 37044415395,
+    "job_id": 110962174331,
+    "run_at_utc": "2026-10-02T17:59:50.797313+00:00",
+    "status": "SOURCE_NOT_READY",
+    "pretest_count": 0,
+    "draw_count": 0,
+    "source_sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+    "artifact_id": 11244151845,
+    "artifact_digest": "sha256:2adfc6bd46c85f22cbf3ffb3e90e333bc508547814e905b831463a996138a08c"
+  },
+  "next_action": "Rerun the exact frozen live-probe job against the authoritative source before/after the 2026-10-03 draw. If four pretests appear before 10:59 p.m. ET, preserve the prediction_commit_sha256 before the draw. After the draw row appears, score the fixed model and append usable draw 1/30.",
+  "block_a_progress_usable_draws": 0,
+  "block_a_target_usable_draws": 30,
+  "eureka_status": "NONE",
+  "eureka_master_total": 3
+}
