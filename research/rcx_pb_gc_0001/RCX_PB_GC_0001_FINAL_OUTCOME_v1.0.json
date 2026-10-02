@@ -1,0 +1,103 @@
+{
+  "experiment": "RCX-PB-GC-0001",
+  "title": "Powerball Global-Closure / Causal-State Compiler Test",
+  "final_status": "FAIL_NO_SURVIVING_GRAMMAR",
+  "scientific_classification": "LEGITIMATE_NEGATIVE",
+  "eureka_status": "NONE",
+  "eureka_master_total_unchanged": 3,
+  "source": {
+    "url": "https://cdn.powerball.com/v01/media/powerball-pre-test.pdf",
+    "sha256": "75e66acebe26b9e6803e80e1e4b156f54e0db0e1da8af9f4975a21d784d547f4",
+    "interval": [
+      "2015-10-07",
+      "2026-09-28"
+    ],
+    "scheduled_dates": 1413,
+    "observable_physical_dates": 1412,
+    "source_unavailable": [
+      "2025-03-01"
+    ],
+    "qualification_status": "QUALIFIED_WITH_SOURCE_MISSINGNESS",
+    "blocking_anomalies": 0
+  },
+  "split": {
+    "development_observable": 878,
+    "validation_observable": 261,
+    "sealed_test_observable": 273,
+    "sealed_source_unavailable": 1
+  },
+  "executed_branches": [
+    {
+      "family": "finite-memory causal-state table family",
+      "stage_reached": "DEV",
+      "outcome": "PRUNED_ON_DEV",
+      "candidates": 24,
+      "best_model": "CS_COUNT_A16",
+      "best_dev_cv_raw_nats_per_date": -0.024517857848688804,
+      "conclusion": "No candidate beat the fair baseline even before MDL."
+    },
+    {
+      "family": "sparse GF(2) event-incidence parity with global temporal compilation",
+      "stage_reached": "VALIDATION",
+      "outcome": "VALIDATION_FAIL",
+      "dev_search_white_masks": 6195,
+      "dev_search_pb_masks": 15,
+      "dev_advancing_candidates": 2,
+      "validation_candidates": [
+        {
+          "model_id": "GF2_W524362_P9",
+          "validation_global_raw_nats_per_date": -0.0040281595747750495,
+          "validation_forward_raw_nats_per_date": -0.005748281078964132,
+          "validation_global_score_minus_mdl": -0.0253481611353984
+        },
+        {
+          "model_id": "GF2_W524392_P9",
+          "validation_global_raw_nats_per_date": -0.004610401683112213,
+          "validation_forward_raw_nats_per_date": -0.0012499956496080434,
+          "validation_global_score_minus_mdl": -0.02593040324373556
+        }
+      ],
+      "conclusion": "The marginal DEV parity signal reversed below the fair baseline on the frozen validation split."
+    },
+    {
+      "family": "fixed moment / low-rank temporal-operator family",
+      "stage_reached": "DEV",
+      "outcome": "NO_DEV_ADVANCER",
+      "candidates": 36,
+      "best_model": "MOM_B1_R1_L10",
+      "best_dev_global_cv_raw_nats_per_date": 0.0006464511113507184,
+      "best_dev_forward_cv_raw_nats_per_date": 0.0001928563122312551,
+      "best_dev_global_score_minus_mdl": -0.007072964143358982,
+      "conclusion": "No candidate satisfied the frozen DEV advancement rule; all were stopped before validation."
+    }
+  ],
+  "gates_not_reached": [
+    "full-pipeline matched-null testing",
+    "sealed historical hole reconstruction",
+    "sealed forward-only scoring",
+    "stability promotion gate",
+    "hardware/ball-set transfer promotion gate",
+    "live prospective replication"
+  ],
+  "sealed_truth_accessed_for_model_search_selection_or_scoring": false,
+  "interpretation": {
+    "confirmed": "Under the frozen observable corpus and the finite low-complexity families actually searched, no explicit grammar survived the pre-sealed selection gates.",
+    "falsified": "The tested finite-state, sparse low-weight GF(2) temporal-parity, and frozen moment/low-rank temporal-operator implementations as predictive/reconstructive grammars for this experiment.",
+    "not_falsified": [
+      "all possible hidden physical state dependence",
+      "all possible globally constrained histories",
+      "all possible representations or transformation grammars",
+      "microscopic determinism or stochasticity in general",
+      "the broader Reality-Code research program"
+    ],
+    "prohibited_inference": "This result is not evidence that lottery outcomes are predictable, and it is not proof that no physical signal can exist."
+  },
+  "audit": {
+    "parity_search_manifest_v0_1_1_git_blob": "948d949a5c820fad0f150faf539b15f81576cdd2",
+    "parity_validation_run_id": 37012856939,
+    "parity_validation_artifact_digest": "sha256:8c2678c087702d674079acb3e970cc0db3b740bcd2f2f484ee03356b3529166a",
+    "moment_lowrank_run_id": 37013526636,
+    "moment_lowrank_artifact_digest": "sha256:de8f9244c6198ff5759cf749ba35a3e18370065c473f1dc6d36c7d79308f08da",
+    "branch": "lab/rcx-pb-gc-0001"
+  }
+}
