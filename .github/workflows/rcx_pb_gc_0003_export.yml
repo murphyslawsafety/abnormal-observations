@@ -1,0 +1,34 @@
+name: RCX-PB-GC-0003 Build Historical Corpus
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0003']
+    paths:
+      - 'research/rcx_pb_gc_0003/export_historical_corpus.py'
+      - '.github/workflows/rcx_pb_gc_0003_export.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen preregistration
+        run: test "$(git hash-object research/rcx_pb_gc_0003/RCX_PB_GC_0003_PREREGISTRATION_v1.0.md)" = "427001ac832a56579f286a8dc84e7b1c967bd92e"
+      - name: Install PDF extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Reproduce qualified 2026-09-28 corpus
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Export one canonical historical corpus through 2026-09-30
+        run: python research/rcx_pb_gc_0003/export_historical_corpus.py
+      - name: Upload corpus once
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0003-historical-corpus
+          path: |
+            artifact/RCX_PB_GC_0003_HISTORICAL_CORPUS_v1.0.json.gz
+            artifact/RCX_PB_GC_0003_HISTORICAL_CORPUS_v1.0.sha256
+            artifact/RCX_PB_GC_0003_HISTORICAL_CORPUS_RECEIPT_v1.0.json
+          if-no-files-found: error
+          retention-days: 90
