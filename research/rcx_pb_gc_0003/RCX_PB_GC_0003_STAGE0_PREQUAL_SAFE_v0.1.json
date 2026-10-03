@@ -1,0 +1,20 @@
+{
+  "bad_pretest_count_dates": [],
+  "dates": 1412,
+  "distinct_block_invariant_states": 349,
+  "distinct_role_multisets": 1065,
+  "interpretation": "The anonymous quotient representation is exactly relabeling-invariant on the safe corpus, but same-day structure alone leaves a large equivalence class of unseen candidate objects. P2 is therefore intentionally non-identifiable at exact-object level unless deeper temporal/grammar information breaks the symmetry.",
+  "max_candidate_equivalence_class_size": 56,
+  "median_candidate_equivalence_class_size": 50.0,
+  "median_unseen_white_objects_per_block": 51.0,
+  "median_unique_white_objects_per_block": 18.0,
+  "p10_unique_white_objects_per_block": 16.0,
+  "p90_candidate_equivalence_class_size": 53.0,
+  "p90_unique_white_objects_per_block": 19.0,
+  "p99_candidate_equivalence_class_size": 54.0,
+  "prequalification": "PASS",
+  "relabel_invariant_failures": 0,
+  "role_relabel_failures": 0,
+  "scientific_status": "ENGINEERING_DRY_RUN_ONLY",
+  "scope": "safe v0.4 pretest context through 2026-09-28"
+}
