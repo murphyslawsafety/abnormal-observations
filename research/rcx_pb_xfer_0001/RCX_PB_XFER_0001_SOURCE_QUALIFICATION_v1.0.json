@@ -1,0 +1,42 @@
+{
+  "experiment": "RCX-PB-XFER-0001",
+  "source_qualification": "PASS",
+  "pretest_source_sha256": "6da5a5e2c3c5db14108728da3558b23a69806563b008e5fcd7292886394ca08a",
+  "winning_source_sha256": "6da25276edac5da7c1aece3db1c145a8b377be9b2821eaf2731124d4e9a5c090",
+  "pretest_csv_rows_total": 16382,
+  "winning_csv_rows_total": 4092,
+  "year_2013": {
+    "pretest_rows": 394,
+    "dates": 98,
+    "winning_rows": 98
+  },
+  "year_2014": {
+    "pretest_rows": 1252,
+    "dates": 313,
+    "winning_rows": 313
+  },
+  "date_alignment_2013_2014": {
+    "pretest_dates": 411,
+    "winning_dates": 411,
+    "missing_winning_dates": 0,
+    "missing_pretest_dates": 0
+  },
+  "used_ball_set_resolution": {
+    "ambiguous_dates": 0,
+    "all_four_chambers_unique_used_set_per_date": true
+  },
+  "pretest_rows_per_date": {
+    "four_rows": 409,
+    "five_rows": 2
+  },
+  "machine_used_date_counts": {
+    "H": 124,
+    "I": 104,
+    "C": 78,
+    "F": 53,
+    "G": 52
+  },
+  "alternate_machine_used_dates": 0,
+  "outcome_values_inspected_for_2014_before_runner_freeze": false,
+  "eureka_status": "NONE"
+}
