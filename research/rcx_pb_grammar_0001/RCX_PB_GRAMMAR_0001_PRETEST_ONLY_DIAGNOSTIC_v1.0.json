@@ -1,0 +1,45 @@
+{
+  "experiment": "RCX-PB-GRAMMAR-0001",
+  "stage": "PRETEST_ONLY_REPRESENTATION_DIAGNOSTIC",
+  "outcome_access": "NO DRAW OUTCOMES USED",
+  "source": "qualified RCX-PB-GC-0001 pretest context through 2026-09-28",
+  "pretest_blocks": 1412,
+  "adjacent_pretest_transitions": 4236,
+  "exact_partial_operator_distinct_signatures": 150,
+  "support_topology_distinct_signatures": 117,
+  "overlap_displacement_distinct_signatures": 52,
+  "overlap_count_distinct_signatures": 5,
+  "adjacent_overlap_count_distribution": {
+    "0": 2868,
+    "1": 1192,
+    "2": 167,
+    "3": 7,
+    "4": 2,
+    "5": 0
+  },
+  "three_step_same_object_composition_survivors": {
+    "0": 1410,
+    "1": 2
+  },
+  "four_pretest_anonymous_partition": {
+    "distinct_restricted_growth_signatures": 1065,
+    "max_signature_frequency": 116,
+    "median_unique_objects_in_20_cells": 18.0,
+    "min_unique_objects_in_20_cells": 13,
+    "max_unique_objects_in_20_cells": 20,
+    "unique_object_count_distribution": {
+      "13": 2,
+      "14": 3,
+      "15": 38,
+      "16": 141,
+      "17": 301,
+      "18": 446,
+      "19": 365,
+      "20": 116
+    },
+    "coarse_partition_invariant_signatures": 342
+  },
+  "interpretation": "Literal multi-step physical-object composition is almost always empty across P1->P4, so an S5-style persistent-object grammar is not an appropriate real-data representation. The next historical stage must operate on anonymous set-partition/equivalence-class extension grammar, where recurrence, novelty, order, and partition refinement survive even when individual objects do not persist through every adjacent transition.",
+  "roh_relevance": "ROH-PROBE: quotient/equivalence structure and record extension; not evidence for ROH.",
+  "eureka_status": "NONE"
+}
