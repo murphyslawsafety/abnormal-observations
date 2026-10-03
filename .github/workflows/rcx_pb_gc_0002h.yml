@@ -1,0 +1,36 @@
+name: RCX-PB-GC-0002H Historical Sealed Shadow
+on:
+  push:
+    branches: ['lab/rcx-pb-gc-0002h']
+    paths:
+      - '.github/workflows/rcx_pb_gc_0002h.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen prereg, evaluator, parent model and scorer
+        run: |
+          test "$(git hash-object research/rcx_pb_gc_0002h/RCX_PB_GC_0002H_PREREGISTRATION_v1.0.md)" = "9f796cd41dd88522ae3b75b8ad489b1b15ff95f9"
+          test "$(git hash-object research/rcx_pb_gc_0002h/evaluate_sealed_shadow.py)" = "7b01bc6c1b56bc863ae8f3a809bf631af5c8c263"
+          echo "7831729fc8ba4fc385e8956961572f1e5ca8fc289c57ded77ef49fe49b441b87  research/rcx_pb_gc_0002/RCX_PB_GC_0002_FITTED_MODEL_v1.0.json" | sha256sum -c -
+          test "$(git hash-object research/rcx_pb_gc_0002/live_score.py)" = "cf920a30d8aa809b9794ad252ec45443945f3926"
+      - name: Install PDF extractor
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Reproduce frozen RCX-PB-GC-0001 qualified corpus and sealed vault
+        run: python research/rcx_pb_gc_0001/cloud_qualify.py
+      - name: Execute one-time sealed historical shadow
+        run: python research/rcx_pb_gc_0002h/evaluate_sealed_shadow.py
+      - name: Upload historical shadow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-gc-0002h-historical-shadow
+          path: |
+            artifact/RCX_PB_GC_0002H_SUMMARY_v1.0.json
+            artifact/RCX_PB_GC_0002H_RESULT_v1.0.json
+          if-no-files-found: error
+          retention-days: 90
