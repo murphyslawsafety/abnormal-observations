@@ -1,0 +1,36 @@
+name: RCX-PB-XFER-0001 Fetch Official Texas Sources
+on:
+  push:
+    branches: ['lab/rcx-pb-xfer-0001']
+    paths:
+      - '.github/workflows/rcx_pb_xfer_0001_fetch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify preregistration is frozen
+        run: |
+          test "$(git hash-object research/rcx_pb_xfer_0001/RCX_PB_XFER_0001_PREREGISTRATION_v1.0.md)" = "2d79df836e8204940419834f747718fb8780d425"
+      - name: Fetch official Texas Lottery CSVs
+        run: |
+          mkdir -p artifact
+          curl -L --fail --retry 3 --retry-delay 2 -A "Mozilla/5.0 RCX-PB-XFER-0001"             -o artifact/daily4morningpretest.csv             "https://www.texaslottery.com/export/sites/lottery/Games/Daily_4/daily4morningpretest.csv"
+          curl -L --fail --retry 3 --retry-delay 2 -A "Mozilla/5.0 RCX-PB-XFER-0001"             -o artifact/daily4morning.csv             "https://www.texaslottery.com/export/sites/lottery/Games/Daily_4/Winning_Numbers/daily4morning.csv"
+          sha256sum artifact/daily4morningpretest.csv artifact/daily4morning.csv > artifact/SHA256SUMS.txt
+          wc -c artifact/daily4morningpretest.csv artifact/daily4morning.csv > artifact/SIZES.txt
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rcx-pb-xfer-0001-official-texas-sources
+          path: |
+            artifact/daily4morningpretest.csv
+            artifact/daily4morning.csv
+            artifact/SHA256SUMS.txt
+            artifact/SIZES.txt
+          if-no-files-found: error
+          retention-days: 90
