@@ -47,7 +47,6 @@ if len(draws)!=1412:
 if set(draws)!=set(pre):
     raise SystemExit("pretest/draw date mismatch before 2026-09-30 append")
 
-# Import the already-calibrated source interface and append 2026-09-30.
 scorer=Path("research/rcx_pb_gc_0002/live_score.py")
 spec=importlib.util.spec_from_file_location("live",scorer)
 live=importlib.util.module_from_spec(spec); spec.loader.exec_module(live)
@@ -79,8 +78,9 @@ payload={
     "records":records,
 }
 raw=(json.dumps(payload,sort_keys=True,separators=(",",":"))+"\n").encode()
-with gzip.open(OUT,"wb",compresslevel=9,mtime=0) as f:
-    f.write(raw)
+with OUT.open("wb") as fout:
+    with gzip.GzipFile(filename="", mode="wb", fileobj=fout, compresslevel=9, mtime=0) as f:
+        f.write(raw)
 sha=hashlib.sha256(OUT.read_bytes()).hexdigest()
 (ART/"RCX_PB_GC_0003_HISTORICAL_CORPUS_v1.0.sha256").write_text(
     sha+"  RCX_PB_GC_0003_HISTORICAL_CORPUS_v1.0.json.gz\n",encoding="utf-8")
