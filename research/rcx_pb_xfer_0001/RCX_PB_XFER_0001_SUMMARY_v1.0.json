@@ -1,0 +1,39 @@
+{
+  "experiment": "RCX-PB-XFER-0001",
+  "status": "FAIL",
+  "initialization_year": 2013,
+  "initialization_dates": 98,
+  "evaluation_year": 2014,
+  "evaluation_dates": 313,
+  "pretest_source_sha256": "6da5a5e2c3c5db14108728da3558b23a69806563b008e5fcd7292886394ca08a",
+  "winning_source_sha256": "6da25276edac5da7c1aece3db1c145a8b377be9b2821eaf2731124d4e9a5c090",
+  "runner_sha256": "aca21e38395c43fa61d4e2e3c7203cf3c0f3dd66d6c8c51e434bdbbc134f3250",
+  "full_result_sha256": "e81bc7f910021bfe373351c51530bd69a6a982e6f7b9cdb33b1dd2cd5666f84b",
+  "summary_sha256": "a116577e8ecc2929c3d4a94ad7d3ba29acb46c7c40cc76cec998db16acd5b98b",
+  "mean_date_auc": 0.47927760028398997,
+  "mean_date_auc_minus_half": -0.02072239971601003,
+  "block_z": -3.928492223562406,
+  "positive_block_count": 3,
+  "full_20_date_blocks": 15,
+  "positive_block_fraction": 0.2,
+  "chamber_mean_auc": [
+    0.4840255591054313,
+    0.4889953851615193,
+    0.4511892083777067,
+    0.49290024849130276
+  ],
+  "chronological_tercile_mean_auc": [
+    0.4751322751322752,
+    0.5024038461538461,
+    0.46033653846153844
+  ],
+  "relabel_integrity": {
+    "pass": true,
+    "max_abs_chamber_auc_diff": 0.0,
+    "max_abs_date_auc_diff": 0.0,
+    "tolerance": 1e-12
+  },
+  "candidate_replication": false,
+  "null_campaign_authorized": false,
+  "eureka_status": "NONE"
+}
