@@ -1,0 +1,38 @@
+name: ROX-0002B Reflexive Loop-Topology Qualification
+on:
+  push:
+    branches: ['lab/rox-0002']
+    paths:
+      - '.github/workflows/rox_0002b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen protocol and runner
+        run: |
+          test "$(git hash-object research/rox_0002/ROX_0002B_PREREGISTRATION_v1.0.md)" = "3ee3a8880568e7272c9bfed60e4cc280d5e124d2"
+          test "$(git hash-object research/rox_0002/rox_0002b_synthetic.py)" = "69a62611b5b8d1a76064bb2140fe2c613007842a"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependency
+        run: python -m pip install --quiet numpy
+      - name: Execute frozen qualification
+        run: python research/rox_0002/rox_0002b_synthetic.py
+      - name: Hash result
+        run: sha256sum ROX_0002B_RESULT_v1.0.json > ROX_0002B_RESULT_v1.0.sha256
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0002b-result
+          path: |
+            ROX_0002B_RESULT_v1.0.json
+            ROX_0002B_RESULT_v1.0.sha256
+          if-no-files-found: error
+          retention-days: 90
