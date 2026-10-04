@@ -13,76 +13,84 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve OSF project 5d8nh
+      - name: Resolve OSF project tree
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p artifact
-          curl -L --fail --retry 3 -H "Accept: application/vnd.api+json" \
-            "https://api.osf.io/v2/nodes/5d8nh/" \
-            -o artifact/node.json
-          curl -L --fail --retry 3 -H "Accept: application/vnd.api+json" \
-            "https://api.osf.io/v2/nodes/5d8nh/files/" \
-            -o artifact/providers.json
           python - <<'PY'
-          import json, pathlib
-          j=json.load(open('artifact/providers.json'))
-          rows=[]
-          for x in j.get('data',[]):
-              rows.append({
-                  'id':x.get('id'),
-                  'type':x.get('type'),
-                  'name':x.get('attributes',{}).get('name'),
-                  'path':x.get('attributes',{}).get('path'),
-                  'files':x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{}).get('href')
-              })
-          pathlib.Path('artifact/providers_summary.json').write_text(json.dumps(rows,indent=2,sort_keys=True)+'\n')
-          print(json.dumps(rows,indent=2))
+          import json, urllib.request, pathlib, time
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0003-source-qualifier'}
+          def get(url):
+              req=urllib.request.Request(url,headers=H)
+              with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+          root='5d8nh'
+          nodes=[]
+          queue=[root]
+          seen=set()
+          while queue:
+              nid=queue.pop(0)
+              if nid in seen: continue
+              seen.add(nid)
+              node=get(f'https://api.osf.io/v2/nodes/{nid}/')
+              a=node['data'].get('attributes',{})
+              nodes.append({'id':nid,'title':a.get('title'),'description':a.get('description'),'date_modified':a.get('date_modified')})
+              try:
+                  ch=get(f'https://api.osf.io/v2/nodes/{nid}/children/')
+                  for x in ch.get('data',[]):
+                      cid=x.get('id')
+                      if cid and cid not in seen: queue.append(cid)
+              except Exception as e:
+                  nodes[-1]['children_error']=repr(e)
+              time.sleep(.05)
+          pathlib.Path('artifact/nodes.json').write_text(json.dumps(nodes,indent=2,sort_keys=True)+'\n')
+          print('nodes',len(nodes))
+          for n in nodes: print(n['id'], n.get('title'))
           PY
-      - name: Enumerate osfstorage recursively
+      - name: Enumerate files for all nodes
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, urllib.request, pathlib, time
-          start='https://api.osf.io/v2/nodes/5d8nh/files/osfstorage/'
-          seen=set(); files=[]; folders=[]; queue=[start]
-          headers={'Accept':'application/vnd.api+json','User-Agent':'ROX-0003-source-qualifier'}
-          while queue:
-              url=queue.pop(0)
-              if url in seen: continue
-              seen.add(url)
-              req=urllib.request.Request(url,headers=headers)
-              with urllib.request.urlopen(req,timeout=30) as r:
-                  j=json.load(r)
-              for x in j.get('data',[]):
-                  a=x.get('attributes',{})
-                  links=x.get('links',{})
-                  rec={
-                      'id':x.get('id'),
-                      'name':a.get('name'),
-                      'kind':a.get('kind'),
-                      'path':a.get('path'),
-                      'size':a.get('size'),
-                      'date_modified':a.get('date_modified'),
-                      'download':links.get('download'),
-                      'materialized_path':a.get('materialized_path')
-                  }
-                  if a.get('kind')=='folder':
-                      folders.append(rec)
-                      rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{})
-                      href=rel.get('href') if isinstance(rel,dict) else rel
-                      if href: queue.append(href)
-                  else:
-                      files.append(rec)
-              nxt=j.get('links',{}).get('next')
-              if nxt: queue.append(nxt)
-              time.sleep(0.05)
-          pathlib.Path('artifact/file_inventory.json').write_text(json.dumps(files,indent=2,sort_keys=True)+'\n')
-          pathlib.Path('artifact/folder_inventory.json').write_text(json.dumps(folders,indent=2,sort_keys=True)+'\n')
-          print('files',len(files),'folders',len(folders))
-          for f in files:
-              print(f.get('size'), f.get('materialized_path') or f.get('name'))
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0003-source-qualifier'}
+          nodes=json.load(open('artifact/nodes.json'))
+          allf=[]
+          for node in nodes:
+              nid=node['id']
+              queue=[f'https://api.osf.io/v2/nodes/{nid}/files/osfstorage/']
+              seen=set()
+              while queue:
+                  url=queue.pop(0)
+                  if url in seen: continue
+                  seen.add(url)
+                  try:
+                      req=urllib.request.Request(url,headers=H)
+                      with urllib.request.urlopen(req,timeout=30) as r: j=json.load(r)
+                  except Exception as e:
+                      allf.append({'node_id':nid,'error':repr(e),'url':url})
+                      continue
+                  for x in j.get('data',[]):
+                      a=x.get('attributes',{})
+                      links=x.get('links',{})
+                      rec={'node_id':nid,'node_title':node.get('title'),'id':x.get('id'),
+                           'name':a.get('name'),'kind':a.get('kind'),'size':a.get('size'),
+                           'materialized_path':a.get('materialized_path'),'download':links.get('download'),
+                           'date_modified':a.get('date_modified')}
+                      if a.get('kind')=='folder':
+                          rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{})
+                          href=rel.get('href') if isinstance(rel,dict) else rel
+                          if href: queue.append(href)
+                      else:
+                          allf.append(rec)
+                  nxt=j.get('links',{}).get('next')
+                  if nxt: queue.append(nxt)
+                  time.sleep(.03)
+          pathlib.Path('artifact/file_inventory.json').write_text(json.dumps(allf,indent=2,sort_keys=True)+'\n')
+          real=[f for f in allf if not f.get('error')]
+          print('files',len(real))
+          for f in real:
+              print(f.get('node_id'), f.get('size'), f.get('materialized_path') or f.get('name'))
           PY
           sha256sum artifact/*.json > artifact/QUALIFICATION_SHA256SUMS.txt
       - name: Upload source qualification inventory
