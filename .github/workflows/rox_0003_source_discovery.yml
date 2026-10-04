@@ -1,0 +1,50 @@
+name: ROX-0003 Discover Open Human Sources
+on:
+  push:
+    branches: ['lab/rox-0003']
+    paths:
+      - '.github/workflows/rox_0003_source_discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Discover Balsdon 2020 OSF data and code
+        run: |
+          mkdir -p artifact
+          curl -L --fail --retry 3 -H "Accept: application/vnd.api+json"             "https://api.osf.io/v2/nodes/c9xfr/files/osfstorage/"             -o artifact/balsdon_data_root.json
+          curl -L --fail --retry 3 -H "Accept: application/vnd.api+json"             "https://api.osf.io/v2/nodes/s6zfb/files/osfstorage/"             -o artifact/balsdon_code_root.json
+          python - <<'PY'
+          import json, pathlib
+          def summarize(src,dst):
+              j=json.load(open(src))
+              rows=[]
+              for x in j.get('data',[]):
+                  a=x.get('attributes',{})
+                  l=x.get('links',{})
+                  rows.append({
+                      'id':x.get('id'),
+                      'name':a.get('name'),
+                      'kind':a.get('kind'),
+                      'size':a.get('size'),
+                      'date_modified':a.get('date_modified'),
+                      'download':l.get('download'),
+                      'new_folder':l.get('new_folder'),
+                      'move':l.get('move'),
+                  })
+              pathlib.Path(dst).write_text(json.dumps(rows,indent=2,sort_keys=True)+'\n')
+          summarize('artifact/balsdon_data_root.json','artifact/balsdon_data_root_summary.json')
+          summarize('artifact/balsdon_code_root.json','artifact/balsdon_code_root_summary.json')
+          PY
+          sha256sum artifact/*.json > artifact/SHA256SUMS.txt
+      - name: Upload source discovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0003-source-discovery
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
