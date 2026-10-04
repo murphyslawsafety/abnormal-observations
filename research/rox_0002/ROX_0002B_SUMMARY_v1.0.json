@@ -1,0 +1,25 @@
+{
+  "experiment": "ROX-0002B",
+  "status": "CONTROL_PASS",
+  "evidence_class": "architectural/methodological synthetic control",
+  "workflow_run": 37243585611,
+  "job": 111556974494,
+  "artifact_id": 11318641001,
+  "artifact_digest": "sha256:d69fe43025bef443252cf4684c5dca87145ff630d98d960d3ecd41b831d88197",
+  "result_sha256": "2ff971936376090cd2ae7bb78ea72e1348c1c9848ad9fc024af68458800b1c33",
+  "cases_correct": 16,
+  "cases_total": 16,
+  "all_loop_cases_classified_loop": true,
+  "broken_cases_correct": 12,
+  "broken_cases_unidentifiable": 0,
+  "no_broken_case_classified_loop": true,
+  "all_loop_destruction_controls_pass": true,
+  "representation_flip_mismatch_count": 0,
+  "loop_test_weakest_edge_nats": [
+    902.9155714063379,
+    1247.4473112251164,
+    1220.0857593358526,
+    1222.622609589451
+  ],
+  "eureka_status": "NONE"
+}
