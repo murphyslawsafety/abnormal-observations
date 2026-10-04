@@ -1,0 +1,214 @@
+{
+  "experiment": "ROX-0001",
+  "version": "0.1",
+  "date": "2026-10-04",
+  "status": "SOURCE_REGISTRY_CANDIDATE_NOT_FROZEN",
+  "eureka_status": "NONE",
+  "signature_fields": [
+    "Q",
+    "T",
+    "C",
+    "I",
+    "O",
+    "L",
+    "R",
+    "M"
+  ],
+  "field_legend": {
+    "Q": "observer quotient/equivalence structure",
+    "T": "transformation/operator grammar",
+    "C": "composition relations",
+    "I": "invariants/stabilizers/closure",
+    "O": "order/noncommutativity/orientation",
+    "L": "ledger/hidden closure state",
+    "R": "retained record/history dependence",
+    "M": "second-order observer/self-model dependence"
+  },
+  "sources": [
+    {
+      "project": "Reality-Code / Reality-Decompiler",
+      "canonical_results": [
+        "RCX-0020",
+        "EUREKA-002",
+        "RCX-0008",
+        "RCX-0009",
+        "BRIDGE-0008",
+        "RCX-0010A"
+      ],
+      "supported": {
+        "Q": "SUPPORTED_METHOD_ARCHITECTURE",
+        "T": "SUPPORTED_REAL_AND_CONTROLLED_BENCHMARKS",
+        "C": "SUPPORTED_FORMALLY_AND_METHOD_LEVEL",
+        "I": "SUPPORTED_FORMALLY_AND_METHOD_LEVEL",
+        "O": "SUPPORTED_FORMALLY_UNDER_COMPOSITION_CONJUGACY"
+      },
+      "not_established": {
+        "L": "UNRESOLVED_AS_UNIVERSAL",
+        "R": "UNRESOLVED_AS_UNIVERSAL",
+        "M": "NOT_ESTABLISHED"
+      },
+      "notes": [
+        "Generator-first recovery transferred to held-out planets and recompiled to another representation.",
+        "Topology/support transferred better than amplitude/transient detail in intervention-response tests.",
+        "Dual reconstruction requires operation and invariant channels to agree.",
+        "Conjugacy gives exact composition/commutator transfer under stated assumptions."
+      ]
+    },
+    {
+      "project": "Unified-Code",
+      "canonical_results": [
+        "UCB-0002"
+      ],
+      "supported": {
+        "Q": "METHOD_ARCHITECTURE_COMPATIBLE",
+        "T": "SUPPORTED_CONTROLLED",
+        "C": "SUPPORTED_CONTROLLED",
+        "I": "SUPPORTED_CONTROLLED",
+        "L": "SUPPORTED_CONTROLLED_AS_EXPLICIT_LEDGER_CLASS"
+      },
+      "not_established": {
+        "O": "NOT_PRIMARY_RESULT",
+        "R": "NOT_PRIMARY_RESULT",
+        "M": "NOT_ESTABLISHED"
+      },
+      "notes": [
+        "6/6 blind classifications correct; 4/4 held-out cases transferred under unchanged abstract signature.",
+        "Direct closure, ledger closure, no-law, and insufficient-identifiability were separated.",
+        "High-fit pseudo-invariant was rejected by frozen identifiability gate."
+      ]
+    },
+    {
+      "project": "Resonance-Code",
+      "canonical_results": [
+        "RC-X32B"
+      ],
+      "supported": {
+        "C": "SUPPORTED_SYNTHETIC_MAJOR_MILESTONE",
+        "T": "SUPPORTED_SYNTHETIC_MAJOR_MILESTONE"
+      },
+      "not_established": {
+        "Q": "NOT_PRIMARY_RESULT",
+        "I": "NOT_PRIMARY_RESULT",
+        "O": "NEXT_EXPERIMENT_TARGET",
+        "L": "NOT_PRIMARY_RESULT",
+        "R": "NOT_PRIMARY_RESULT",
+        "M": "NOT_ESTABLISHED"
+      },
+      "notes": [
+        "200/200 true targets passed.",
+        "198/200 decoys found and 198/198 found decoys exposed.",
+        "Source-derived algebraic relations predicted withheld target compositions where target-only calibration was insufficient."
+      ]
+    },
+    {
+      "project": "Observer-Code",
+      "canonical_results": [
+        "OCX-0002",
+        "OCX-0003",
+        "OCX-0006A_BLOCKED"
+      ],
+      "supported": {
+        "Q": "SUPPORTED_SYNTHETIC_PARTITION_RECOVERY",
+        "R": "SUPPORTED_SYNTHETIC_ADAPTIVE_OBSERVER_ARCHITECTURE"
+      },
+      "not_established": {
+        "T": "PARTIAL_METHOD_ONLY",
+        "C": "PARTIAL_METHOD_ONLY",
+        "I": "NOT_PRIMARY_RESULT",
+        "O": "NOT_PRIMARY_RESULT",
+        "L": "NOT_PRIMARY_RESULT",
+        "M": "NOT_ESTABLISHED_IN_NATURAL_SYSTEM"
+      },
+      "notes": [
+        "Synthetic calibration recovered hidden operational partitions without labels.",
+        "Adaptive experiment selection recovered exact partition under a measurement budget.",
+        "Real double-pendulum benchmark remains execution blocked; no substitute data authorized."
+      ]
+    },
+    {
+      "project": "ENERGY-CODE / Gravity-Code",
+      "canonical_results": [
+        "EUREKA-003",
+        "ECX-0001A/B",
+        "ECX-0002S"
+      ],
+      "supported": {
+        "T": "SUPPORTED_PHYSICAL_ARCHITECTURE",
+        "C": "SUPPORTED_PHYSICAL_ARCHITECTURE",
+        "O": "SUPPORTED_PHYSICAL_ARCHITECTURE"
+      },
+      "not_established": {
+        "Q": "NOT_PRIMARY_RESULT",
+        "I": "PARTIAL_ARCHITECTURAL",
+        "L": "NOT_PRIMARY_RESULT",
+        "R": "NOT_PRIMARY_RESULT",
+        "M": "NOT_ESTABLISHED"
+      },
+      "notes": [
+        "Oriented nonreciprocal/noncommutative closed-loop geometric pumping is physically realizable.",
+        "This does not establish levitation, reactionless propulsion, or a universal law."
+      ]
+    },
+    {
+      "project": "LIFE-CODE",
+      "canonical_results": [
+        "Proof Case 0001",
+        "EXP-0002",
+        "Ordered-Window Module Calibration 0002"
+      ],
+      "supported": {
+        "Q": "HIERARCHY_RELEVANT_BUT_SIMPLE_QUOTIENT_RESCUE_FAILED",
+        "T": "NOT_YET_UNIVERSAL",
+        "C": "MIXED_EVIDENCE",
+        "I": "STRUCTURAL_SUPPORT_NOT_UNIVERSAL"
+      },
+      "not_established": {
+        "O": "NOT_PRIMARY_RESULT",
+        "L": "NOT_PRIMARY_RESULT",
+        "R": "NOT_PRIMARY_RESULT",
+        "M": "NOT_ESTABLISHED"
+      },
+      "notes": [
+        "EXP-0002 supported hierarchy across ladders.",
+        "Naive quotient-rescue Stage A failed prevalence/spatial controls.",
+        "Exact ordered-window module transfer failed deep cross-domain held-out transfer."
+      ]
+    },
+    {
+      "project": "Balance-Code",
+      "canonical_results": [],
+      "supported": {},
+      "not_established": {
+        "Q": "OPEN",
+        "T": "OPEN",
+        "C": "OPEN",
+        "I": "OPEN",
+        "O": "OPEN",
+        "L": "OPEN",
+        "R": "OPEN",
+        "M": "OPEN"
+      },
+      "notes": [
+        "Track remains intentionally clean; no imported evidence counted."
+      ]
+    }
+  ],
+  "current_cross_domain_intersection": {
+    "well_supported_components": [
+      "Q",
+      "T",
+      "C",
+      "I",
+      "O"
+    ],
+    "conditional_component": [
+      "L"
+    ],
+    "major_missing_components": [
+      "R_natural_cross_domain",
+      "M_second_order_self_model"
+    ],
+    "interpretation": "The shared architecture currently compresses most strongly to observer quotient + transformation/composition grammar + invariant closure + possible order sensitivity, with explicit ledger closure available in controlled benchmarks. The specifically recursive self-observation layer is not yet established in a natural cross-domain transfer."
+  },
+  "powerball_policy": "Do not fit another Powerball-specific grammar until ROX-0001 freezes and validates a source meta-grammar. Powerball is a blind target/checksum."
+}
