@@ -1,0 +1,57 @@
+name: ROX-0003 Inspect Human Source Schema
+on:
+  push:
+    branches: ['lab/rox-0003']
+    paths:
+      - '.github/workflows/rox_0003_schema.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch exact qualified source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          curl -L --fail --retry 3 -o artifact/behaviour.csv https://osf.io/download/xcq75/
+          curl -L --fail --retry 3 -o artifact/README.txt https://osf.io/download/vse85/
+          curl -L --fail --retry 3 -o artifact/behaviourAnalysis.m https://osf.io/download/gm2cz/
+          curl -L --fail --retry 3 -o artifact/fitLITconf_dect.m https://osf.io/download/7ahx2/
+          sha256sum artifact/* > artifact/SHA256SUMS.txt
+      - name: Inspect schema without outcome testing
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv, json, pathlib, collections
+          p='artifact/behaviour.csv'
+          with open(p,newline='',encoding='utf-8-sig') as f:
+              r=csv.DictReader(f)
+              rows=list(r)
+              fields=r.fieldnames
+          out={'rows':len(rows),'columns':fields}
+          # Safe qualification only: cardinalities and missingness, not effect estimates.
+          stats={}
+          for c in fields:
+              vals=[x.get(c,'') for x in rows]
+              non=[v for v in vals if v not in ('',None,'NaN','nan','NA')]
+              uniq=set(non)
+              rec={'nonmissing':len(non),'missing':len(vals)-len(non),'unique_count':len(uniq)}
+              if len(uniq)<=30:
+                  rec['unique_values']=sorted(uniq)[:30]
+              stats[c]=rec
+          out['column_stats']=stats
+          pathlib.Path('artifact/SCHEMA_QUALIFICATION.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({'rows':out['rows'],'columns':out['columns'],'column_stats':stats},indent=2)[:30000])
+          PY
+      - name: Upload qualified schema package
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0003-qualified-schema
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
