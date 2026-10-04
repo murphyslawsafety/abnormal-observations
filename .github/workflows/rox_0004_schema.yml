@@ -1,0 +1,109 @@
+name: ROX-0004 Inspect Explicit-Loop Schema
+on:
+  push:
+    branches: ['lab/rox-0004']
+    paths:
+      - '.github/workflows/rox_0004_schema.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve and download trial CSV files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/exp1 artifact/exp2 artifact/code
+          python - <<'PY'
+          import json, urllib.request, pathlib, time
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0004-schema-qualifier'}
+          def get(url):
+              req=urllib.request.Request(url,headers=H)
+              with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+          q=['https://api.osf.io/v2/nodes/m5a4x/files/osfstorage/']; seen=set(); files=[]
+          while q:
+              url=q.pop(0)
+              if url in seen: continue
+              seen.add(url); j=get(url)
+              for x in j.get('data',[]):
+                  a=x.get('attributes',{}); l=x.get('links',{})
+                  if a.get('kind')=='folder':
+                      rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{})
+                      href=rel.get('href') if isinstance(rel,dict) else rel
+                      if href: q.append(href)
+                  else:
+                      files.append({'name':a.get('name'),'path':a.get('materialized_path'),'size':a.get('size'),'download':l.get('download')})
+              nxt=j.get('links',{}).get('next')
+              if nxt: q.append(nxt)
+          keep=[]
+          for f in files:
+              p=f.get('path') or ''
+              n=f.get('name') or ''
+              dest=None
+              if p.startswith('/DataExp1/') and n.lower().endswith('.csv'): dest=pathlib.Path('artifact/exp1')/n
+              elif p.startswith('/DataExp2/') and n.lower().endswith('.csv'): dest=pathlib.Path('artifact/exp2')/n
+              elif n in ('OSF_Exp1_InfoSeekingAnalysis.Rmd','OSF_Exp2_InfoSeekingAnalysis.Rmd'): dest=pathlib.Path('artifact/code')/n
+              elif n in ('Exp1_InfoSeeking.py','Exp2_InfoSeeking.py'): dest=pathlib.Path('artifact/code')/n
+              if dest:
+                  req=urllib.request.Request(f['download'],headers={'User-Agent':'ROX-0004-schema-qualifier'})
+                  with urllib.request.urlopen(req,timeout=60) as r: dest.write_bytes(r.read())
+                  keep.append({**f,'local':str(dest)})
+                  time.sleep(.02)
+          pathlib.Path('artifact/DOWNLOAD_MANIFEST.json').write_text(json.dumps(keep,indent=2,sort_keys=True)+'\n')
+          print('downloaded',len(keep),'qualified files')
+          print('exp1',sum(1 for x in keep if '/DataExp1/' in (x.get('path') or '')),
+                'exp2',sum(1 for x in keep if '/DataExp2/' in (x.get('path') or '')))
+          PY
+          sha256sum artifact/exp1/*.csv artifact/exp2/*.csv artifact/code/* > artifact/SOURCE_SHA256SUMS.txt
+
+      - name: Inspect schema only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv, pathlib, json, collections
+          def inspect(folder):
+              fs=sorted(pathlib.Path(folder).glob('*.csv'))
+              schemas=collections.Counter()
+              row_counts=[]
+              union=set()
+              cardinality=collections.defaultdict(set)
+              missing=collections.Counter()
+              for p in fs:
+                  with p.open(newline='',encoding='utf-8-sig') as f:
+                      r=csv.DictReader(f)
+                      fields=tuple(r.fieldnames or ())
+                      schemas[fields]+=1
+                      n=0
+                      for row in r:
+                          n+=1
+                          union.update(fields)
+                          for c in fields:
+                              v=row.get(c,'')
+                              if v in ('',None,'NA','NaN','nan'): missing[c]+=1
+                              elif len(cardinality[c])<100: cardinality[c].add(v)
+                      row_counts.append({'file':p.name,'rows':n})
+              return {
+                  'files':len(fs),
+                  'row_counts':row_counts,
+                  'schemas':[{'count':n,'columns':list(s)} for s,n in schemas.items()],
+                  'union_columns':sorted(union),
+                  'limited_unique_counts':{k:len(v) for k,v in cardinality.items()},
+                  'limited_unique_values':{k:sorted(v) for k,v in cardinality.items() if len(v)<=30},
+                  'missing_counts':dict(missing)
+              }
+          out={'exp1':inspect('artifact/exp1'),'exp2':inspect('artifact/exp2')}
+          pathlib.Path('artifact/SCHEMA_QUALIFICATION.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:50000])
+          PY
+
+      - name: Upload schema qualification
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0004-qualified-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
