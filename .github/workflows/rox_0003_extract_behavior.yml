@@ -1,0 +1,90 @@
+name: ROX-0003 Extract Behavioral Source Subset
+on:
+  push:
+    branches: ['lab/rox-0003']
+    paths:
+      - '.github/workflows/rox_0003_extract_behavior.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install source readers
+        run: python -m pip install --quiet remotezip scipy numpy
+      - name: Extract only non-Tobii behavioral MAT files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/subjects
+          python - <<'PY'
+          from remotezip import RemoteZip
+          import pathlib, json
+          url='https://osf.io/download/cdjtx/'
+          chosen=[]
+          with RemoteZip(url) as z:
+              for info in z.infolist():
+                  f=info.filename
+                  low=f.lower()
+                  if (f.startswith('raw_data/SUB-') and low.endswith('.mat')
+                      and '_tobii_' not in low and '/._' not in f):
+                      chosen.append(info)
+              for info in chosen:
+                  out=pathlib.Path('artifact/subjects')/pathlib.Path(info.filename).name
+                  out.write_bytes(z.read(info.filename))
+          meta=[{'filename':i.filename,'file_size':i.file_size,'compress_size':i.compress_size} for i in chosen]
+          pathlib.Path('artifact/EXTRACTED_MEMBERS.json').write_text(json.dumps(meta,indent=2,sort_keys=True)+'\n')
+          print('extracted',len(chosen),'behavior MAT files')
+          for x in meta: print(x['file_size'],x['filename'])
+          PY
+          curl -L --fail --retry 3 -o artifact/preGenEvSep360.mat https://osf.io/download/f89xj/
+          sha256sum artifact/subjects/*.mat artifact/preGenEvSep360.mat > artifact/SHA256SUMS.txt
+      - name: Inspect MAT schema only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import scipy.io as sio, pathlib, json, numpy as np
+          def desc(v):
+              out={'python_type':type(v).__name__}
+              if hasattr(v,'shape'): out['shape']=list(v.shape)
+              if hasattr(v,'dtype'): out['dtype']=str(v.dtype)
+              if getattr(v,'dtype',None) is not None and v.dtype.names:
+                  out['fields']=list(v.dtype.names)
+              return out
+          rows=[]
+          for p in sorted(pathlib.Path('artifact/subjects').glob('*.mat')):
+              j=sio.loadmat(p,struct_as_record=True,squeeze_me=False)
+              rec={'file':p.name,'keys':{}}
+              for k,v in j.items():
+                  if not k.startswith('__'): rec['keys'][k]=desc(v)
+              # targeted shape-only introspection
+              for key in ('data','confDat','p'):
+                  if key in j:
+                      v=j[key]
+                      if getattr(v,'dtype',None) is not None and v.dtype.names:
+                          rec[key+'_fields']=list(v.dtype.names)
+                          fs={}
+                          for fld in v.dtype.names:
+                              try:
+                                  x=v[fld][0,0]
+                                  fs[fld]=desc(x)
+                              except Exception as e:
+                                  fs[fld]={'error':repr(e)}
+                          rec[key+'_field_shapes']=fs
+              rows.append(rec)
+          ev=sio.loadmat('artifact/preGenEvSep360.mat',struct_as_record=True,squeeze_me=False)
+          evdesc={k:desc(v) for k,v in ev.items() if not k.startswith('__')}
+          out={'subject_file_count':len(rows),'subject_files':rows,'evidence_mat':evdesc}
+          pathlib.Path('artifact/MAT_SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:50000])
+          PY
+      - name: Upload qualified behavioral subset
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0003-behavioral-source-subset
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
