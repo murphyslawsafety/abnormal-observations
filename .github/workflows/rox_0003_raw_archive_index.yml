@@ -1,0 +1,50 @@
+name: ROX-0003 Inspect Raw Archive Index
+on:
+  push:
+    branches: ['lab/rox-0003']
+    paths:
+      - '.github/workflows/rox_0003_raw_archive_index.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install remote ZIP reader
+        run: python -m pip install --quiet remotezip requests
+      - name: Read remote archive central directory only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          from remotezip import RemoteZip
+          import json, pathlib, re
+          url='https://osf.io/download/cdjtx/'
+          with RemoteZip(url) as z:
+              infos=z.infolist()
+              rows=[{'filename':i.filename,'file_size':i.file_size,'compress_size':i.compress_size} for i in infos]
+          pathlib.Path('artifact/RAW_ARCHIVE_INDEX.json').write_text(json.dumps(rows,indent=2,sort_keys=True)+'\n')
+          print('members',len(rows))
+          pats=[]
+          for r in rows:
+              f=r['filename']
+              low=f.lower()
+              if ('sub-' in low and low.endswith('.mat')) or 'behav' in low or 'confidence' in low or 'confdat' in low:
+                  pats.append(r)
+          print('candidate behavioral members',len(pats))
+          for r in pats[:300]:
+              print(r['file_size'],r['compress_size'],r['filename'])
+          pathlib.Path('artifact/CANDIDATE_BEHAVIOR_MEMBERS.json').write_text(json.dumps(pats,indent=2,sort_keys=True)+'\n')
+          PY
+          sha256sum artifact/*.json > artifact/SHA256SUMS.txt
+      - name: Upload archive-index artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0003-raw-archive-index
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
