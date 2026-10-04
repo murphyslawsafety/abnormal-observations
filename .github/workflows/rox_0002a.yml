@@ -1,0 +1,39 @@
+name: ROX-0002A Closed Observer-Loop Qualification
+on:
+  push:
+    branches: ['lab/rox-0002']
+    paths:
+      - '.github/workflows/rox_0002a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen protocol and runner
+        run: |
+          test "$(git hash-object research/rox_0002/ROX_0002A_PREREGISTRATION_v1.0.md)" = "314c8a1a887d862ff998bf43e03f456eae74e8e4"
+          test "$(git hash-object research/rox_0002/ROX_0002A_PREGEN_CLARIFICATION_v1.0.1.md)" = "5ef2a538f77300ce5bc95dc4e3ba43220d6f9707"
+          test "$(git hash-object research/rox_0002/rox_0002a_synthetic.py)" = "ea69d7bf0a82c09a1f3a430ac62c9a7ef3451b6d"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependency
+        run: python -m pip install --quiet numpy
+      - name: Execute frozen qualification
+        run: python research/rox_0002/rox_0002a_synthetic.py
+      - name: Hash result
+        run: sha256sum ROX_0002A_RESULT_v1.0.json > ROX_0002A_RESULT_v1.0.sha256
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0002a-result
+          path: |
+            ROX_0002A_RESULT_v1.0.json
+            ROX_0002A_RESULT_v1.0.sha256
+          if-no-files-found: error
+          retention-days: 90
