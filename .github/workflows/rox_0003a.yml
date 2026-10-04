@@ -1,0 +1,76 @@
+name: ROX-0003A Natural Human Test
+on:
+  push:
+    branches: ['lab/rox-0003']
+    paths:
+      - '.github/workflows/rox_0003a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen preregistration and scorer
+        run: |
+          test "$(git hash-object research/rox_0003/ROX_0003A_PREREGISTRATION_v1.0.md)" = "0d64f6cfc9d44cd2c8f716e1a5d64a5c240bb696"
+          test "$(git hash-object research/rox_0003/rox_0003a_natural.py)" = "693cc61675b0fbae985fb38f7a1270d4f6f8042b"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --quiet numpy scipy remotezip
+
+      - name: Extract qualified behavioral MAT subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/subjects
+          python - <<'PY'
+          from remotezip import RemoteZip
+          import pathlib
+          url='https://osf.io/download/cdjtx/'
+          with RemoteZip(url) as z:
+              chosen=[]
+              for info in z.infolist():
+                  f=info.filename
+                  low=f.lower()
+                  if (f.startswith('raw_data/SUB-') and low.endswith('.mat')
+                      and '_tobii_' not in low and '/._' not in f):
+                      chosen.append(info)
+              if len(chosen) != 21:
+                  raise SystemExit(f'expected 21 behavioral MAT files, got {len(chosen)}')
+              for info in chosen:
+                  out=pathlib.Path('artifact/subjects')/pathlib.Path(info.filename).name
+                  out.write_bytes(z.read(info.filename))
+          print('extracted',len(chosen),'behavioral MAT files')
+          PY
+          curl -L --fail --retry 3 -o artifact/preGenEvSep360.mat https://osf.io/download/f89xj/
+          sha256sum artifact/subjects/*.mat artifact/preGenEvSep360.mat > artifact/SOURCE_SHA256SUMS.txt
+
+      - name: Execute frozen natural test
+        run: |
+          python research/rox_0003/rox_0003a_natural.py \
+            --subjects-dir artifact/subjects \
+            --pregen artifact/preGenEvSep360.mat \
+            --output ROX_0003A_RESULT_v1.0.json
+
+      - name: Hash result
+        run: sha256sum ROX_0003A_RESULT_v1.0.json > ROX_0003A_RESULT_v1.0.sha256
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0003a-natural-result
+          path: |
+            ROX_0003A_RESULT_v1.0.json
+            ROX_0003A_RESULT_v1.0.sha256
+            artifact/SOURCE_SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
