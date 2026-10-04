@@ -23,17 +23,17 @@ jobs:
             local out="$2"
             local ok=0
             for kind in nodes registrations; do
-              url="https://api.osf.io/v2/\${kind}/\${id}/files/osfstorage/"
-              code=$(curl -L -sS -w "%{http_code}" -o "\${out}.tmp" -H "Accept: application/vnd.api+json" "$url" || true)
+              url="https://api.osf.io/v2/${kind}/${id}/files/osfstorage/"
+              code=$(curl -L -sS -w "%{http_code}" -o "${out}.tmp" -H "Accept: application/vnd.api+json" "$url" || true)
               if [ "$code" = "200" ]; then
-                mv "\${out}.tmp" "$out"
-                echo "\${id} resolved as \${kind}" >> artifact/RESOLUTION.txt
+                mv "${out}.tmp" "$out"
+                echo "${id} resolved as ${kind}" >> artifact/RESOLUTION.txt
                 ok=1
                 break
               fi
             done
             if [ "$ok" -ne 1 ]; then
-              echo "Unable to resolve OSF id \${id}" >&2
+              echo "Unable to resolve OSF id ${id}" >&2
               exit 22
             fi
           }
@@ -55,7 +55,7 @@ jobs:
                       'date_modified':a.get('date_modified'),
                       'download':l.get('download'),
                   })
-              pathlib.Path(dst).write_text(json.dumps(rows,indent=2,sort_keys=True)+'\\n')
+              pathlib.Path(dst).write_text(json.dumps(rows,indent=2,sort_keys=True)+'\n')
           summarize('artifact/balsdon_data_root.json','artifact/balsdon_data_root_summary.json')
           summarize('artifact/balsdon_code_root.json','artifact/balsdon_code_root_summary.json')
           PY
