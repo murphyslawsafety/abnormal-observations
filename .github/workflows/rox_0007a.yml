@@ -1,0 +1,49 @@
+name: ROX-0007A Active-vs-Fixed Natural Loop
+on:
+  push:
+    branches: ['lab/rox-0007']
+    paths:
+      - '.github/workflows/rox_0007a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen protocol and scorer
+        run: |
+          test "$(git hash-object research/rox_0007/ROX_0007A_PREREGISTRATION_v1.0.md)" = "04fc824c5173b150ffd9057cdad7d37ecf2cc8a4"
+          test "$(git hash-object research/rox_0007/rox_0007a_natural.py)" = "5a4e04ad1496aeb9bb169281ad46cb5b6cf9f080"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependency
+        run: python -m pip install --quiet numpy
+      - name: Retrieve frozen qualified source artifact
+        run: |
+          mkdir -p source
+          gh api repos/${GITHUB_REPOSITORY}/actions/artifacts/11345531906/zip > source.zip
+          echo "36df146c48f101dfca84bb58f06084a05a287971b74dab432d42853a20a35657  source.zip" | sha256sum -c -
+          unzip -q source.zip -d source
+          test -f source/exp2_data_free.csv
+          test -f source/exp2_data_fixed.csv
+      - name: Execute frozen natural loop test
+        run: python research/rox_0007/rox_0007a_natural.py source
+      - name: Hash result
+        run: sha256sum ROX_0007A_RESULT_v1.0.json > ROX_0007A_RESULT_v1.0.sha256
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0007a-natural-loop-result
+          path: |
+            ROX_0007A_RESULT_v1.0.json
+            ROX_0007A_RESULT_v1.0.sha256
+          if-no-files-found: error
+          retention-days: 90
