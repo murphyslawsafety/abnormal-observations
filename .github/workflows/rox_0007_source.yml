@@ -1,0 +1,83 @@
+name: ROX-0007 Qualify Kaanders Active-vs-Fixed Source
+on:
+  push:
+    branches: ['lab/rox-0007']
+    paths:
+      - '.github/workflows/rox_0007_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import urllib.request, pathlib, hashlib, json, zipfile, re, html
+          base='https://raw.githubusercontent.com/BDMLab/Kaanders_et_al_2021/2f9c697454a5e6047c4d389da135c74992f0d9f3/'
+          files=[
+            'data/exp2_data_free.csv',
+            'data/exp2_data_fixed.csv',
+            'data/exp2_variable_definitions.docx',
+            'data/exp1_main_data.csv',
+            'data/exp1_variable_definitions.docx',
+            'README.md'
+          ]
+          manifest=[]
+          for p in files:
+              req=urllib.request.Request(base+p,headers={'User-Agent':'ROX-0007-source-qualifier'})
+              with urllib.request.urlopen(req,timeout=120) as r: raw=r.read()
+              dest=pathlib.Path('artifact')/pathlib.Path(p).name
+              dest.write_bytes(raw)
+              manifest.append({'path':p,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
+          pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+
+          for name in ('exp1_variable_definitions.docx','exp2_variable_definitions.docx'):
+              p=pathlib.Path('artifact')/name
+              with zipfile.ZipFile(p) as z:
+                  xml=z.read('word/document.xml').decode('utf-8')
+              xml=xml.replace('</w:p>','\n').replace('</w:tr>','\n')
+              txt=re.sub(r'<[^>]+>','',xml)
+              txt=html.unescape(txt)
+              txt='\n'.join(line.strip() for line in txt.splitlines() if line.strip())
+              pathlib.Path('artifact',name.replace('.docx','.txt')).write_text(txt+'\n',encoding='utf-8')
+          PY
+      - name: Inspect schema without effect scoring
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv,json,pathlib,collections
+          out={}
+          for name in ('exp1_main_data.csv','exp2_data_free.csv','exp2_data_fixed.csv'):
+              with open('artifact/'+name,encoding='utf-8-sig',newline='') as f:
+                  r=csv.DictReader(f)
+                  rows=list(r)
+                  fields=r.fieldnames or []
+              pcol='participant' if 'participant' in fields else ('Participant' if 'Participant' in fields else None)
+              participants=sorted(set(x[pcol] for x in rows)) if pcol else []
+              out[name]={
+                  'rows':len(rows),
+                  'columns':fields,
+                  'participant_count':len(participants),
+                  'participants':participants,
+                  'session_values':sorted(set(x.get('Session','') for x in rows)) if 'Session' in fields else [],
+                  'type_values':sorted(set(x.get('Type','') for x in rows)) if 'Type' in fields else []
+              }
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:30000])
+          print('--- EXP2 VARIABLE DEFINITIONS ---')
+          print(pathlib.Path('artifact/exp2_variable_definitions.txt').read_text()[:30000])
+          PY
+      - name: Upload qualified source
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0007-qualified-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
