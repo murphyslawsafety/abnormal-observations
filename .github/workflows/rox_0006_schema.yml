@@ -1,0 +1,47 @@
+name: ROX-0006 Inspect Desender Trial Schema
+on:
+  push:
+    branches: ['lab/rox-0006']
+    paths:
+      - '.github/workflows/rox_0006_schema.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download three OSF files and inspect text schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import json,urllib.request,pathlib,hashlib
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0006-schema'}
+          req=urllib.request.Request('https://api.osf.io/v2/nodes/sh3wy/files/osfstorage/',headers=H)
+          with urllib.request.urlopen(req,timeout=30) as r:j=json.load(r)
+          manifest=[]
+          for x in j['data']:
+              a=x.get('attributes',{}); name=a.get('name')
+              if a.get('kind')!='file':continue
+              req=urllib.request.Request(x['links']['download'],headers={'User-Agent':'ROX-0006-schema'})
+              with urllib.request.urlopen(req,timeout=60) as r:raw=r.read()
+              p=pathlib.Path('artifact')/name;p.write_bytes(raw)
+              manifest.append({'name':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
+          pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          for m in manifest:print(m)
+          PY
+          for f in artifact/*.txt; do
+            echo "===== $f ====="
+            head -n 12 "$f" || true
+          done
+      - name: Upload qualified files
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0006-qualified-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
