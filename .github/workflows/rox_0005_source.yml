@@ -1,0 +1,81 @@
+name: ROX-0005 Qualify Direct-Loop Source
+on:
+  push:
+    branches: ['lab/rox-0005']
+    paths:
+      - '.github/workflows/rox_0005_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate OSF wamgt recursively
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import json, pathlib, urllib.request, time
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0005-source-qualifier'}
+          def get(url):
+              req=urllib.request.Request(url,headers=H)
+              with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+          root='wamgt'
+          nodes=[]; q=[root]; seen=set()
+          while q:
+              nid=q.pop(0)
+              if nid in seen: continue
+              seen.add(nid)
+              node=get(f'https://api.osf.io/v2/nodes/{nid}/')
+              a=node['data'].get('attributes',{})
+              nodes.append({'id':nid,'title':a.get('title'),'description':a.get('description'),'date_modified':a.get('date_modified')})
+              try:
+                  ch=get(f'https://api.osf.io/v2/nodes/{nid}/children/')
+                  for x in ch.get('data',[]):
+                      cid=x.get('id')
+                      if cid and cid not in seen: q.append(cid)
+              except Exception as e:
+                  nodes[-1]['children_error']=repr(e)
+              time.sleep(.02)
+          files=[]
+          for n in nodes:
+              nid=n['id']; qq=[f'https://api.osf.io/v2/nodes/{nid}/files/osfstorage/']; seenq=set()
+              while qq:
+                  url=qq.pop(0)
+                  if url in seenq: continue
+                  seenq.add(url)
+                  try: j=get(url)
+                  except Exception as e:
+                      files.append({'node_id':nid,'node_title':n.get('title'),'error':repr(e),'url':url}); continue
+                  for x in j.get('data',[]):
+                      a=x.get('attributes',{}); l=x.get('links',{})
+                      if a.get('kind')=='folder':
+                          rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{})
+                          href=rel.get('href') if isinstance(rel,dict) else rel
+                          if href: qq.append(href)
+                      else:
+                          files.append({'node_id':nid,'node_title':n.get('title'),'id':x.get('id'),'name':a.get('name'),
+                                        'size':a.get('size'),'materialized_path':a.get('materialized_path'),
+                                        'date_modified':a.get('date_modified'),'download':l.get('download')})
+                  nxt=j.get('links',{}).get('next')
+                  if nxt: qq.append(nxt)
+                  time.sleep(.02)
+          pathlib.Path('artifact/NODES.json').write_text(json.dumps(nodes,indent=2,sort_keys=True)+'\n')
+          pathlib.Path('artifact/FILES.json').write_text(json.dumps(files,indent=2,sort_keys=True)+'\n')
+          print('nodes',len(nodes),'files',len([x for x in files if not x.get('error')]))
+          for n in nodes: print('NODE',n['id'],n.get('title'))
+          for f in files:
+              if not f.get('error'): print('FILE',f.get('node_id'),f.get('size'),f.get('materialized_path') or f.get('name'),f.get('id'))
+          PY
+          sha256sum artifact/*.json > artifact/SHA256SUMS.txt
+      - name: Upload inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0005-source-inventory
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
