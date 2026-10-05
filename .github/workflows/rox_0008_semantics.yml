@@ -1,0 +1,47 @@
+name: ROX-0008 Inspect Kaanders Analysis Semantics
+on:
+  push:
+    branches: ['lab/rox-0008']
+    paths:
+      - '.github/workflows/rox_0008_semantics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned analysis notebook and extract semantic contexts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import urllib.request,pathlib,json,re
+          url='https://raw.githubusercontent.com/BDMLab/Kaanders_et_al_2021/2f9c697454a5e6047c4d389da135c74992f0d9f3/code/Analyses%20%26%20Figures%20Kaanders%20et%20al.%20%282021%29.ipynb'
+          req=urllib.request.Request(url,headers={'User-Agent':'ROX-0008-semantics'})
+          with urllib.request.urlopen(req,timeout=180) as r:raw=r.read()
+          pathlib.Path('artifact/analysis.ipynb').write_bytes(raw)
+          nb=json.loads(raw)
+          src='\n'.join(''.join(c.get('source',[])) for c in nb.get('cells',[]))
+          terms=['Which_First','DeltaSampling','ChosenTime','UnchosenTime','Internal_Saccades','GSF_Second_Presentation','Left_IA_Second_Dwell_Time','Right_IA_Second_Dwell_Time','sampling_time']
+          out={}
+          for term in terms:
+              hits=[]
+              for m in re.finditer(re.escape(term),src):
+                  hits.append(src[max(0,m.start()-700):min(len(src),m.end()+1100)])
+              out[term]=hits[:20]
+          pathlib.Path('artifact/SEMANTIC_CONTEXTS.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          for k,v in out.items():
+              print('===== TERM',k,'HITS',len(v),'=====')
+              for x in v[:6]: print(x[:2200].replace('\n',' '))
+          PY
+      - name: Upload semantic contexts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0008-semantic-contexts
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
