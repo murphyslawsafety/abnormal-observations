@@ -1,0 +1,43 @@
+name: ROX-0008 Inspect Confidence-Update Semantics
+on:
+  push:
+    branches: ['lab/rox-0008']
+    paths:
+      - '.github/workflows/rox_0008_conf_semantics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract confidence-update model contexts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import urllib.request,json,re,pathlib
+          url='https://raw.githubusercontent.com/BDMLab/Kaanders_et_al_2021/2f9c697454a5e6047c4d389da135c74992f0d9f3/code/Analyses%20%26%20Figures%20Kaanders%20et%20al.%20%282021%29.ipynb'
+          req=urllib.request.Request(url,headers={'User-Agent':'ROX-0008-conf'})
+          with urllib.request.urlopen(req,timeout=180) as r: nb=json.load(r)
+          src='\n'.join(''.join(c.get('source',[])) for c in nb.get('cells',[]))
+          terms=['ConfChange','ZConf2','sampling bias','Confidence change','DeltaSampling ~','ZConf2 ~']
+          out={}
+          for term in terms:
+              hits=[]
+              for m in re.finditer(re.escape(term),src,re.I):
+                  hits.append(src[max(0,m.start()-1200):min(len(src),m.end()+2200)])
+              out[term]=hits[:30]
+              print('===== ',term,' ',len(hits),' =====')
+              for x in hits[:8]: print(x[:3500].replace('\n',' '))
+          pathlib.Path('artifact/CONF_CONTEXTS.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rox-0008-confidence-contexts
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
