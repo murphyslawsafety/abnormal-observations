@@ -1,0 +1,57 @@
+name: ROX-0005 Inspect Direct-Loop Schema
+on:
+  push:
+    branches: ['lab/rox-0005']
+    paths:
+      - '.github/workflows/rox_0005_schema.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and inspect official OSF CSV
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import csv, json, pathlib, urllib.request, collections, hashlib
+          H={'Accept':'application/vnd.api+json','User-Agent':'ROX-0005-schema'}
+          req=urllib.request.Request('https://api.osf.io/v2/nodes/wamgt/files/osfstorage/',headers=H)
+          with urllib.request.urlopen(req,timeout=30) as r: j=json.load(r)
+          f=[x for x in j['data'] if x.get('attributes',{}).get('name')=='Mohretal_2024_Data.csv'][0]
+          url=f['links']['download']
+          req=urllib.request.Request(url,headers={'User-Agent':'ROX-0005-schema'})
+          with urllib.request.urlopen(req,timeout=60) as r: raw=r.read()
+          pathlib.Path('artifact/Mohretal_2024_Data.csv').write_bytes(raw)
+          rows=[]
+          with open('artifact/Mohretal_2024_Data.csv',encoding='utf-8-sig',newline='') as fh:
+              cr=csv.DictReader(fh)
+              fields=cr.fieldnames
+              cnt=collections.Counter(); uniques=collections.defaultdict(set); missing=collections.Counter()
+              for row in cr:
+                  rows.append(row)
+                  for k,v in row.items():
+                      if v in ('',None,'NA','NaN','nan'): missing[k]+=1
+                      elif len(uniques[k])<200: uniques[k].add(v)
+          out={
+              'sha256':hashlib.sha256(raw).hexdigest(),
+              'bytes':len(raw),'rows':len(rows),'columns':fields,
+              'limited_unique_counts':{k:len(v) for k,v in uniques.items()},
+              'limited_unique_values':{k:sorted(v) for k,v in uniques.items() if len(v)<=40},
+              'missing_counts':dict(missing)
+          }
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+      - name: Upload qualified source
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0005-qualified-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
