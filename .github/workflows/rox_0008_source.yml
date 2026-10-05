@@ -1,0 +1,80 @@
+name: ROX-0008 Inspect Fixation Microdynamics Source
+on:
+  push:
+    branches: ['lab/rox-0008']
+    paths:
+      - '.github/workflows/rox_0008_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned fixation and trial sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          python - <<'PY'
+          import urllib.request,pathlib,hashlib,json
+          base='https://raw.githubusercontent.com/BDMLab/Kaanders_et_al_2021/2f9c697454a5e6047c4d389da135c74992f0d9f3/'
+          files=[
+            'data/1stPresentation_Fixations_Fixed.csv',
+            'data/rawdata_exp2_fixed.csv',
+            'data/rawdata_exp2_free.csv'
+          ]
+          m=[]
+          for p in files:
+              req=urllib.request.Request(base+p,headers={'User-Agent':'ROX-0008-source'})
+              with urllib.request.urlopen(req,timeout=180) as r:raw=r.read()
+              d=pathlib.Path('artifact')/pathlib.Path(p).name
+              d.write_bytes(raw)
+              m.append({'path':p,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
+          pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(m,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Inspect fixation schema without effect scoring
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv,json,pathlib,collections
+          p=pathlib.Path('artifact/1stPresentation_Fixations_Fixed.csv')
+          with p.open(encoding='utf-8-sig',newline='') as f:
+              r=csv.DictReader(f); fields=r.fieldnames or []
+              n=0; participants=set(); trials=set(); cards=collections.Counter()
+              sample=[]
+              uniques=collections.defaultdict(set)
+              for row in r:
+                  n+=1
+                  for key in ('participant','Participant','sub','Sub'):
+                      if key in row and row[key] not in ('',None):
+                          participants.add(row[key]); break
+                  t=None
+                  for key in ('Trial','trial','TRIAL'):
+                      if key in row and row[key] not in ('',None):
+                          t=row[key];break
+                  if t is not None:
+                      trials.add((next(iter(participants)) if len(participants)==1 else '',t))
+                  for k,v in row.items():
+                      if v not in ('',None) and len(uniques[k])<100:
+                          uniques[k].add(v)
+                  if len(sample)<12: sample.append(row)
+              out={
+                  'rows':n,'columns':fields,
+                  'participant_count':len(participants),
+                  'limited_unique_counts':{k:len(v) for k,v in uniques.items()},
+                  'limited_unique_values':{k:sorted(v) for k,v in uniques.items() if len(v)<=30},
+                  'sample_rows':sample
+              }
+          pathlib.Path('artifact/FIXATION_SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:50000])
+          PY
+      - name: Upload source qualification
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0008-fixation-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
