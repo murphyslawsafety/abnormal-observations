@@ -1,0 +1,96 @@
+name: ROX-0011 Decode Stytra Source Semantics
+on:
+  push:
+    branches: ['lab/rox-0011']
+    paths:
+      - '.github/workflows/rox_0011_decode.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/unpacked
+          curl -L --fail --retry 3 --retry-delay 2             -o artifact/example_imaging.zip             "https://zenodo.org/records/1692080/files/example_imaging.zip?download=1"
+          echo "eb6dc08c900aff6112f0d3bb4d06be82  artifact/example_imaging.zip" | md5sum -c -
+          unzip -q artifact/example_imaging.zip -d artifact/unpacked
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install decode dependencies
+        run: python -m pip install --quiet pandas numpy tables h5py
+      - name: Decode pandas HDF logs and metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib,json,hashlib
+          import pandas as pd, numpy as np, h5py
+          root=pathlib.Path('artifact/unpacked/example_imaging/181113_f1')
+          out={}
+
+          for name in ['160136_behavior_log.hdf5','160136_estimator_log.hdf5','160136_stimulus_log.hdf5']:
+              p=root/name
+              rec={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+              try:
+                  df=pd.read_hdf(p)
+                  rec['shape']=list(df.shape)
+                  rec['columns']=[str(x) for x in df.columns]
+                  rec['index_type']=type(df.index).__name__
+                  rec['index_head']=[str(x) for x in df.index[:10]]
+                  rec['sample_rows']=df.head(8).astype(object).where(pd.notnull(df),None).to_dict('records')
+                  rec['numeric_summary']={}
+                  for c in df.columns:
+                      if pd.api.types.is_numeric_dtype(df[c]):
+                          vals=pd.to_numeric(df[c],errors='coerce')
+                          finite=vals[np.isfinite(vals)]
+                          if len(finite):
+                              rec['numeric_summary'][str(c)]={
+                                  'n_finite':int(len(finite)),
+                                  'min':float(finite.min()),
+                                  'max':float(finite.max()),
+                                  'mean':float(finite.mean()),
+                                  'std':float(finite.std(ddof=1)) if len(finite)>1 else 0.0,
+                                  'n_unique':int(finite.nunique())
+                              }
+                  out[name]=rec
+              except Exception as e:
+                  rec['decode_error']=repr(e)
+                  out[name]=rec
+
+          meta=json.loads((root/'160136_metadata.json').read_text())
+          out['metadata']=meta
+
+          stack=root/'stack.hdf5'
+          with h5py.File(stack,'r') as h:
+              ds=h['data']
+              # read per-frame coarse summary only; no scientific effect scoring
+              n=ds.shape[0]
+              first=np.asarray(ds[0])
+              mid=np.asarray(ds[n//2])
+              last=np.asarray(ds[n-1])
+              out['stack']={
+                  'shape':list(ds.shape),
+                  'dtype':str(ds.dtype),
+                  'frame_count':int(n),
+                  'first_stats':{'min':float(first.min()),'max':float(first.max()),'mean':float(first.mean()),'std':float(first.std())},
+                  'mid_stats':{'min':float(mid.min()),'max':float(mid.max()),'mean':float(mid.mean()),'std':float(mid.std())},
+                  'last_stats':{'min':float(last.min()),'max':float(last.max()),'mean':float(last.mean()),'std':float(last.std())}
+              }
+
+          pathlib.Path('artifact/DECODED_SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True,default=str)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True,default=str)[:140000])
+          PY
+      - name: Upload decode artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0011-decoded-source
+          path: artifact/DECODED_SCHEMA.json
+          if-no-files-found: error
+          retention-days: 90
