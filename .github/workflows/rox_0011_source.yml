@@ -1,0 +1,96 @@
+name: ROX-0011 Qualify Stytra Zebrafish Source
+on:
+  push:
+    branches: ['lab/rox-0011']
+    paths:
+      - '.github/workflows/rox_0011_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download frozen Zenodo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/unpacked
+          curl -L --fail --retry 3 --retry-delay 2             -o artifact/example_imaging.zip             "https://zenodo.org/records/1692080/files/example_imaging.zip?download=1"
+          echo "eb6dc08c900aff6112f0d3bb4d06be82  artifact/example_imaging.zip" | md5sum -c -
+          sha256sum artifact/example_imaging.zip > artifact/SHA256SUM.txt
+          unzip -q artifact/example_imaging.zip -d artifact/unpacked
+          find artifact/unpacked -type f -printf '%P\t%s\n' | sort > artifact/FILE_TREE.tsv
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install schema dependencies
+        run: python -m pip install --quiet h5py pandas numpy tables
+      - name: Inspect schemas and dimensions without effect scoring
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib,json,hashlib,csv
+          import numpy as np
+          root=pathlib.Path('artifact/unpacked')
+          out=[]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file(): continue
+              rel=str(p.relative_to(root))
+              ext=p.suffix.lower()
+              rec={'path':rel,'bytes':p.stat().st_size,'suffix':ext,
+                   'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+              try:
+                  if ext in ('.json',):
+                      j=json.loads(p.read_text(errors='replace'))
+                      rec['json_type']=type(j).__name__
+                      if isinstance(j,dict): rec['keys']=sorted(map(str,j.keys()))[:200]
+                  elif ext in ('.csv','.tsv'):
+                      import pandas as pd
+                      df=pd.read_csv(p,sep=('\t' if ext=='.tsv' else ','),nrows=8)
+                      rec['columns']=[str(x) for x in df.columns]
+                      rec['sample_rows']=df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')
+                  elif ext in ('.h5','.hdf5'):
+                      import h5py
+                      items=[]
+                      with h5py.File(p,'r') as h:
+                          def visit(name,obj):
+                              if hasattr(obj,'shape'):
+                                  items.append({'name':name,'shape':list(obj.shape),'dtype':str(obj.dtype)})
+                          h.visititems(visit)
+                      rec['h5_datasets']=items[:500]
+                  elif ext in ('.hdf',):
+                      import pandas as pd
+                      with pd.HDFStore(p,'r') as store:
+                          rec['hdf_keys']=store.keys()
+                          tables={}
+                          for k in store.keys()[:50]:
+                              try:
+                                  obj=store.select(k,start=0,stop=5)
+                                  tables[k]={'shape_hint':list(obj.shape),
+                                             'columns':[str(x) for x in getattr(obj,'columns',[])]}
+                              except Exception as e:
+                                  tables[k]={'error':repr(e)}
+                          rec['hdf_tables']=tables
+                  elif ext in ('.txt','.log','.yaml','.yml','.ini'):
+                      text=p.read_text(errors='replace')
+                      rec['head']=text[:4000]
+              except Exception as e:
+                  rec['inspect_error']=repr(e)
+              out.append(rec)
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True,default=str)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True,default=str)[:120000])
+          PY
+      - name: Upload qualification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0011-zebrafish-source
+          path: |
+            artifact/SHA256SUM.txt
+            artifact/FILE_TREE.tsv
+            artifact/SCHEMA.json
+          if-no-files-found: error
+          retention-days: 90
