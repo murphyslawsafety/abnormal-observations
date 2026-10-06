@@ -1,0 +1,120 @@
+name: ROX-0010 Qualify ChemoTrack Source
+on:
+  push:
+    branches: ['lab/rox-0010']
+    paths:
+      - '.github/workflows/rox_0010_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch small fixed official trajectory sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/files
+          python - <<'PY'
+          from ftplib import FTP
+          from pathlib import Path
+          import hashlib, json, posixpath
+
+          HOST='ftp.ebi.ac.uk'
+          ROOT='/biostudies/fire/S-BIAD/674/S-BIAD3674/Files/ChemoTrack'
+          CONDITIONS=['Cmin-0-Cmax-0','Cmin-0-Cmax-50nM']
+          NFILES=6
+          ftp=FTP(HOST,timeout=120)
+          ftp.login()
+          manifest=[]
+
+          def is_dir(path):
+              cur=ftp.pwd()
+              try:
+                  ftp.cwd(path); ftp.cwd(cur); return True
+              except Exception:
+                  try: ftp.cwd(cur)
+                  except: pass
+                  return False
+
+          def walk(path):
+              out=[]
+              try:
+                  names=ftp.nlst(path)
+              except Exception:
+                  return out
+              for item in names:
+                  # some servers return basename; normalize
+                  full=item if item.startswith('/') else posixpath.join(path,item)
+                  if full.rstrip('/')==path.rstrip('/'): continue
+                  if is_dir(full):
+                      out.extend(walk(full))
+                  elif full.lower().endswith('.csv'):
+                      out.append(full)
+              return out
+
+          for cond in CONDITIONS:
+              base=f'{ROOT}/{cond}/tracks_csv'
+              files=sorted(set(walk(base)))
+              if not files:
+                  raise SystemExit(f'No CSV files found at {base}')
+              chosen=files[:NFILES]
+              for remote in chosen:
+                  rel=remote[len(ROOT)+1:].replace('/','__')
+                  local=Path('artifact/files')/rel
+                  with local.open('wb') as f:
+                      ftp.retrbinary('RETR '+remote,f.write)
+                  raw=local.read_bytes()
+                  manifest.append({
+                      'condition':cond,
+                      'remote':remote,
+                      'local':local.name,
+                      'bytes':len(raw),
+                      'sha256':hashlib.sha256(raw).hexdigest(),
+                      'available_csv_count':len(files)
+                  })
+          ftp.quit()
+          Path('artifact/MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(manifest,indent=2,sort_keys=True))
+          PY
+      - name: Inspect trajectory schemas without effect scoring
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv,json,pathlib,collections,math
+          manifest=json.load(open('artifact/MANIFEST.json'))
+          out=[]
+          for m in manifest:
+              p=pathlib.Path('artifact/files')/m['local']
+              with p.open(encoding='utf-8-sig',errors='replace',newline='') as f:
+                  sn=f.read(4096)
+                  f.seek(0)
+                  try: dialect=csv.Sniffer().sniff(sn)
+                  except: dialect=csv.excel
+                  r=csv.DictReader(f,dialect=dialect)
+                  fields=r.fieldnames or []
+                  rows=0; sample=[]; uniq=collections.defaultdict(set)
+                  for row in r:
+                      rows+=1
+                      if len(sample)<5: sample.append(row)
+                      for k,v in row.items():
+                          if v not in ('',None) and len(uniq[k])<100:
+                              uniq[k].add(v)
+                  out.append({
+                      'condition':m['condition'],'file':m['local'],'rows':rows,
+                      'columns':fields,'sample_rows':sample,
+                      'limited_unique_counts':{k:len(v) for k,v in uniq.items()}
+                  })
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:100000])
+          PY
+      - name: Upload qualification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0010-chemotrack-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
