@@ -13,18 +13,36 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Enumerate and fetch OSF z8vay
+      - name: Resolve OSF object and enumerate files
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p artifact/files
           python - <<'PY'
-          import urllib.request, json, pathlib, hashlib, os, re, urllib.parse
-          ROOT='https://api.osf.io/v2/nodes/z8vay/files/osfstorage/'
-          UA={'User-Agent':'ROX-0009-source'}
+          import urllib.request, urllib.error, json, pathlib, hashlib, re
+          UA={'User-Agent':'ROX-0009-source','Accept':'application/vnd.api+json'}
+          ids=[('nodes','z8vay'),('registrations','z8vay')]
+          root=None; resolution=[]
+          for kind,oid in ids:
+              url=f'https://api.osf.io/v2/{kind}/{oid}/files/osfstorage/'
+              try:
+                  req=urllib.request.Request(url,headers=UA)
+                  with urllib.request.urlopen(req,timeout=180) as r:
+                      raw=r.read()
+                  j=json.loads(raw)
+                  root=url
+                  pathlib.Path('artifact/ROOT.json').write_bytes(raw)
+                  resolution.append({'kind':kind,'status':'OK','url':url})
+                  break
+              except Exception as e:
+                  resolution.append({'kind':kind,'status':'FAIL','error':repr(e),'url':url})
+          pathlib.Path('artifact/RESOLUTION.json').write_text(json.dumps(resolution,indent=2)+'\n')
+          if root is None:
+              raise SystemExit('No public OSF file root resolved for z8vay')
+
           seen=[]
           def getj(url):
-              req=urllib.request.Request(url,headers={**UA,'Accept':'application/vnd.api+json'})
+              req=urllib.request.Request(url,headers=UA)
               with urllib.request.urlopen(req,timeout=180) as r:
                   return json.load(r)
           def safe(name):
@@ -42,15 +60,17 @@ jobs:
                       seen.append(rec)
                       if kind=='folder':
                           rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{}).get('href')
-                          if rel: walk(rel,path)
+                          if rel:
+                              try: walk(rel,path)
+                              except Exception as e: rec['folder_error']=repr(e)
                       else:
                           size=a.get('size') or 0
                           ext=pathlib.Path(name).suffix.lower()
                           if size<=50_000_000 and ext in {'.csv','.tsv','.txt','.md','.json','.xlsx','.xls','.sav','.mat','.r','.py','.ipynb','.do','.sps','.rds'}:
                               try:
-                                  req=urllib.request.Request(l.get('download'),headers=UA)
+                                  req=urllib.request.Request(l.get('download'),headers={'User-Agent':'ROX-0009-source'})
                                   with urllib.request.urlopen(req,timeout=180) as r: raw=r.read()
-                                  out=pathlib.Path('artifact/files')/(safe(path.replace('/','__')))
+                                  out=pathlib.Path('artifact/files')/safe(path.replace('/','__'))
                                   out.write_bytes(raw)
                                   rec['local_file']=out.name
                                   rec['sha256']=hashlib.sha256(raw).hexdigest()
@@ -60,39 +80,33 @@ jobs:
                   nxt=j.get('links',{}).get('next')
                   if not nxt: break
                   j=getj(nxt)
-          walk(ROOT)
+          walk(root)
           pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(seen,indent=2,sort_keys=True)+'\n')
-          print(json.dumps(seen,indent=2,sort_keys=True)[:100000])
+          print(json.dumps({'resolution':resolution,'files':seen},indent=2,sort_keys=True)[:100000])
           PY
       - name: Inspect candidate tabular schemas without effect scoring
         shell: bash
         run: |
           python - <<'PY'
-          import pathlib, csv, json, zipfile, math
-          import pandas as pd
-          root=pathlib.Path('artifact/files')
+          import pathlib, json, pandas as pd
           out=[]
-          for p in sorted(root.iterdir()):
+          root=pathlib.Path('artifact/files')
+          for p in sorted(root.iterdir()) if root.exists() else []:
               ext=p.suffix.lower()
               rec={'file':p.name,'bytes':p.stat().st_size}
               try:
                   if ext in ('.csv','.tsv','.txt'):
-                      sep='\t' if ext=='.tsv' else None
-                      if sep:
-                          df=pd.read_csv(p,sep=sep,nrows=8)
-                      else:
-                          df=pd.read_csv(p,nrows=8,sep=None,engine='python')
+                      df=pd.read_csv(p,sep=('\t' if ext=='.tsv' else None),engine='python',nrows=8)
                       rec['columns']=[str(x) for x in df.columns]
                       rec['sample_rows']=df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')
                   elif ext in ('.xlsx','.xls'):
                       xl=pd.ExcelFile(p)
                       rec['sheets']=xl.sheet_names
-                      sh={}
+                      rec['sheet_schemas']={}
                       for s in xl.sheet_names[:10]:
                           df=pd.read_excel(p,sheet_name=s,nrows=8)
-                          sh[s]={'columns':[str(x) for x in df.columns],
-                                 'sample_rows':df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')}
-                      rec['sheet_schemas']=sh
+                          rec['sheet_schemas'][s]={'columns':[str(x) for x in df.columns],
+                              'sample_rows':df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')}
               except Exception as e:
                   rec['inspect_error']=repr(e)
               out.append(rec)
@@ -101,7 +115,7 @@ jobs:
           PY
       - name: Hash downloaded candidate files
         run: |
-          find artifact/files -type f -print0 | sort -z | xargs -0 sha256sum > artifact/SHA256SUMS.txt
+          find artifact/files -type f -print0 | sort -z | xargs -0 -r sha256sum > artifact/SHA256SUMS.txt
       - name: Upload qualification
         uses: actions/upload-artifact@v4
         with:
