@@ -1,0 +1,111 @@
+name: ROX-0009 Qualify Advice-Seeking Source
+on:
+  push:
+    branches: ['lab/rox-0009']
+    paths:
+      - '.github/workflows/rox_0009_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enumerate and fetch OSF z8vay
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/files
+          python - <<'PY'
+          import urllib.request, json, pathlib, hashlib, os, re, urllib.parse
+          ROOT='https://api.osf.io/v2/nodes/z8vay/files/osfstorage/'
+          UA={'User-Agent':'ROX-0009-source'}
+          seen=[]
+          def getj(url):
+              req=urllib.request.Request(url,headers={**UA,'Accept':'application/vnd.api+json'})
+              with urllib.request.urlopen(req,timeout=180) as r:
+                  return json.load(r)
+          def safe(name):
+              return re.sub(r'[^A-Za-z0-9._-]+','_',name)[:180]
+          def walk(url,prefix=''):
+              j=getj(url)
+              while True:
+                  for x in j.get('data',[]):
+                      a=x.get('attributes',{}); l=x.get('links',{})
+                      name=a.get('name') or x.get('id')
+                      kind=a.get('kind')
+                      path=(prefix+'/'+name).lstrip('/')
+                      rec={'id':x.get('id'),'path':path,'kind':kind,'size':a.get('size'),
+                           'date_modified':a.get('date_modified'),'download':l.get('download')}
+                      seen.append(rec)
+                      if kind=='folder':
+                          rel=x.get('relationships',{}).get('files',{}).get('links',{}).get('related',{}).get('href')
+                          if rel: walk(rel,path)
+                      else:
+                          size=a.get('size') or 0
+                          ext=pathlib.Path(name).suffix.lower()
+                          if size<=50_000_000 and ext in {'.csv','.tsv','.txt','.md','.json','.xlsx','.xls','.sav','.mat','.r','.py','.ipynb','.do','.sps','.rds'}:
+                              try:
+                                  req=urllib.request.Request(l.get('download'),headers=UA)
+                                  with urllib.request.urlopen(req,timeout=180) as r: raw=r.read()
+                                  out=pathlib.Path('artifact/files')/(safe(path.replace('/','__')))
+                                  out.write_bytes(raw)
+                                  rec['local_file']=out.name
+                                  rec['sha256']=hashlib.sha256(raw).hexdigest()
+                                  rec['downloaded_bytes']=len(raw)
+                              except Exception as e:
+                                  rec['download_error']=repr(e)
+                  nxt=j.get('links',{}).get('next')
+                  if not nxt: break
+                  j=getj(nxt)
+          walk(ROOT)
+          pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(seen,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(seen,indent=2,sort_keys=True)[:100000])
+          PY
+      - name: Inspect candidate tabular schemas without effect scoring
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib, csv, json, zipfile, math
+          import pandas as pd
+          root=pathlib.Path('artifact/files')
+          out=[]
+          for p in sorted(root.iterdir()):
+              ext=p.suffix.lower()
+              rec={'file':p.name,'bytes':p.stat().st_size}
+              try:
+                  if ext in ('.csv','.tsv','.txt'):
+                      sep='\t' if ext=='.tsv' else None
+                      if sep:
+                          df=pd.read_csv(p,sep=sep,nrows=8)
+                      else:
+                          df=pd.read_csv(p,nrows=8,sep=None,engine='python')
+                      rec['columns']=[str(x) for x in df.columns]
+                      rec['sample_rows']=df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')
+                  elif ext in ('.xlsx','.xls'):
+                      xl=pd.ExcelFile(p)
+                      rec['sheets']=xl.sheet_names
+                      sh={}
+                      for s in xl.sheet_names[:10]:
+                          df=pd.read_excel(p,sheet_name=s,nrows=8)
+                          sh[s]={'columns':[str(x) for x in df.columns],
+                                 'sample_rows':df.head(3).astype(object).where(pd.notnull(df),None).to_dict('records')}
+                      rec['sheet_schemas']=sh
+              except Exception as e:
+                  rec['inspect_error']=repr(e)
+              out.append(rec)
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True,default=str)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True,default=str)[:100000])
+          PY
+      - name: Hash downloaded candidate files
+        run: |
+          find artifact/files -type f -print0 | sort -z | xargs -0 sha256sum > artifact/SHA256SUMS.txt
+      - name: Upload qualification
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0009-source-qualification
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
