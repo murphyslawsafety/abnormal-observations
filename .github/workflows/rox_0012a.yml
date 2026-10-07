@@ -1,0 +1,36 @@
+name: ROX-0012A Quantum Backaction Calibration
+on:
+  push:
+    branches: ['lab/rox-0012']
+    paths:
+      - '.github/workflows/rox_0012a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen preregistration and scorer
+        run: |
+          test "$(git hash-object research/rox_0012/ROX_0012A_PREREGISTRATION_v1.0.md)" = "c418f3bb3d2c5daa837828d313a53eb5bf96218a"
+          test "$(git hash-object research/rox_0012/rox_0012a_calibration.py)" = "d1d8a97cd2102d0df48b4d343da232378a93841e"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numpy
+        run: python -m pip install --quiet numpy
+      - name: Execute calibration
+        run: python research/rox_0012/rox_0012a_calibration.py
+      - name: Hash result
+        run: sha256sum ROX_0012A_RESULT_v1.0.json > ROX_0012A_RESULT_v1.0.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rox-0012a-result
+          path: |
+            ROX_0012A_RESULT_v1.0.json
+            ROX_0012A_RESULT_v1.0.sha256
+          if-no-files-found: error
+          retention-days: 90
