@@ -1,0 +1,101 @@
+name: ROX-0012 Qualify Quantum Measurement Source
+on:
+  push:
+    branches: ['lab/rox-0012']
+    paths:
+      - '.github/workflows/rox_0012_source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve Zenodo record and download all files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact/files
+          python - <<'PY'
+          import urllib.request, json, pathlib, hashlib
+          rec='19690318'
+          url=f'https://zenodo.org/api/records/{rec}'
+          req=urllib.request.Request(url,headers={'User-Agent':'ROX-0012-source'})
+          with urllib.request.urlopen(req,timeout=120) as r:
+              meta=json.load(r)
+          pathlib.Path('artifact/RECORD.json').write_text(json.dumps(meta,indent=2,sort_keys=True)+'\n')
+          manifest=[]
+          for f in meta.get('files',[]):
+              key=f.get('key')
+              link=f.get('links',{}).get('self') or f.get('links',{}).get('content')
+              if not link: continue
+              out=pathlib.Path('artifact/files')/pathlib.Path(key).name
+              req=urllib.request.Request(link,headers={'User-Agent':'ROX-0012-source'})
+              with urllib.request.urlopen(req,timeout=120) as r:
+                  raw=r.read()
+              out.write_bytes(raw)
+              manifest.append({
+                  'key':key,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),
+                  'zenodo_checksum':f.get('checksum'),'local':out.name
+              })
+          pathlib.Path('artifact/MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(manifest,indent=2,sort_keys=True))
+          PY
+      - name: Inspect scripts and archives without scoring published effect
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib,zipfile,json,re,csv
+          root=pathlib.Path('artifact/files')
+          out=[]
+          for p in sorted(root.iterdir()):
+              rec={'file':p.name,'bytes':p.stat().st_size}
+              ext=p.suffix.lower()
+              try:
+                  if ext=='.zip':
+                      with zipfile.ZipFile(p) as z:
+                          rec['zip_members']=[{'name':i.filename,'bytes':i.file_size} for i in z.infolist()]
+                          # extract text/code only for schema inspection
+                          ex=pathlib.Path('artifact/extracted'); ex.mkdir(exist_ok=True)
+                          for i in z.infolist():
+                              if pathlib.Path(i.filename).suffix.lower() in {'.py','.csv','.txt','.json','.dat','.npy'} and i.file_size<5_000_000:
+                                  z.extract(i,ex)
+                  elif ext=='.py':
+                      text=p.read_text(errors='replace')
+                      rec['head']=text[:12000]
+              except Exception as e:
+                  rec['inspect_error']=repr(e)
+              out.append(rec)
+
+          ex=pathlib.Path('artifact/extracted')
+          if ex.exists():
+              for p in sorted(ex.rglob('*')):
+                  if not p.is_file(): continue
+                  ext=p.suffix.lower()
+                  rec={'file':str(p.relative_to(ex)),'bytes':p.stat().st_size,'from_archive':True}
+                  try:
+                      if ext in {'.py','.txt','.json','.dat'}:
+                          rec['head']=p.read_text(errors='replace')[:12000]
+                      elif ext=='.csv':
+                          with p.open(newline='',encoding='utf-8-sig',errors='replace') as f:
+                              rr=csv.reader(f); rows=[]
+                              for _ in range(6):
+                                  try: rows.append(next(rr))
+                                  except StopIteration: break
+                              rec['sample_rows']=rows
+                  except Exception as e:
+                      rec['inspect_error']=repr(e)
+                  out.append(rec)
+          pathlib.Path('artifact/SCHEMA.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out,indent=2,sort_keys=True)[:120000])
+          PY
+      - name: Upload qualification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rox-0012-quantum-source
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 90
